@@ -44,28 +44,61 @@ class APIClient:
             json.dump(data, json_file, indent=4)
         logging.info("Data saved to %s", file_path)
 
-    def fetch_and_save_athlete_data(self):
-        athlete_url = 'https://www.strava.com/api/v3/athlete'
-        athlete_data = self.make_request(athlete_url)
-        if athlete_data:
-            self.save_json_to_file(athlete_data, 'athlete_data.json')
+    # def fetch_and_save_athlete_data(self):
+    #     athlete_url = 'https://www.strava.com/api/v3/athlete'
+    #     athlete_data = self.make_request(athlete_url)
+    #     if athlete_data:
+    #         self.save_json_to_file(athlete_data, 'athlete_data.json')
 
-    def get_athlete_activities_data(self, page: int = 1, per_page: int = 200) -> Dict:
+    def fetch_athlete_data(self):
+        athlete_url = 'https://www.strava.com/api/v3/athlete'
+        self.athlete_data = self.make_request(athlete_url)
+        return self.athlete_data
+
+    def save_athlete_data(self):
+        if self.athlete_data:
+            self.save_json_to_file(self.athlete_data, 'athlete_data.json')
+
+    def fetch_athlete_activities_data(self, page: int = 1, per_page: int = 200) -> Dict:
         athlete_activities_url = 'https://www.strava.com/api/v3/athlete/activities'
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
-        return self.make_request(athlete_activities_url)
+        self.athlete_activities_data = self.make_request(athlete_activities_url)
+        return self.athlete_activities_data
 
-    def fetch_and_save_athlete_activities_data(self, page: int = 1, per_page: int = 200):
-        athlete_activities_data = self.get_athlete_activities_data(page=page, per_page=per_page)
-        if athlete_activities_data:
-            self.save_json_to_file(athlete_activities_data, 'athlete_activities_data.json')
+    def save_athlete_activities_data(self, page: int = 1, per_page: int = 200):
+        # if self.athlete_activities_data is None:
+        #     raise ValueError("Activities data not loaded. Call get_activities_data first.")
+        if self.athlete_activities_data:
+            self.save_json_to_file(self.athlete_activities_data, 'athlete_activities_data.json')
+
+    # def fetch_and_save_athlete_activities_data(self, page: int = 1, per_page: int = 200):
+    #     activities_data = self.get_athlete_activities_data(page=page, per_page=per_page)
+    #     if activities_data:
+    #         self.save_json_to_file(activities_data, 'activities_data.json')
 
     def fetch_and_save_activities_data(self):
-        athlete_activities_data = self.get_athlete_activities_data()
+        athlete_activities_data = self.fetch_athlete_activities_data()
         activities_ids_list = [activity['id'] for activity in athlete_activities_data]
         print(activities_ids_list)
         for activity_id in activities_ids_list:
             activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
             activity_id_data = self.make_request(activity_url)
             self.save_json_to_file(activity_id_data, f'activity_{activity_id}.json', 'activities')
+
+    def process_activities(self):
+        self.fetch_athlete_data()
+        self.save_athlete_data()
+
+        self.fetch_athlete_activities_data(page=1, per_page=10)
+        self.save_athlete_activities_data()
+
+        self.fetch_and_save_activities_data()
+
+    def fetch_and_save_routes_data(self):
+        try:
+            with open(file_path, 'r') as json_file:
+                routes_data = json.load(json_file)  # Load the JSON data
+                routes_data = self. data
+        except exec as e:
+            logging.info("Error opening file. %s", e)
