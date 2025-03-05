@@ -22,7 +22,7 @@ class APICache:
             cls._instance = super(APICache, cls).__new__(cls)
         return cls._instance
 
-    def get_access_token(self):
+    def get_access_token(self) -> Dict[str, Any]:
         if self._data is None:
             self._make_api_call()
         return self._data
