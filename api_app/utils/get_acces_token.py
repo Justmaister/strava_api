@@ -38,7 +38,7 @@ class APICache:
             payload = {}
             headers = {}
 
-            logging.info("Sending token request")
+            logging.info("Sending Token request")
             response = requests.request("POST", url, headers=headers, data=payload)
             response.raise_for_status()
             self._data = json.loads(response.text)
