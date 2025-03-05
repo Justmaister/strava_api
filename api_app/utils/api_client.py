@@ -43,11 +43,22 @@ class APIClient:
         athlete_url = 'https://www.strava.com/api/v3/athlete'
         return self.make_request(athlete_url)
 
-    def get_activities_data(self, page: int = 1, per_page: int = 200) -> Dict:
+    def get_athlete_activities_data(self, page: int = 1, per_page: int = 200) -> Dict:
         athlete_activities_url = 'https://www.strava.com/api/v3/athlete/activities'
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
         return self.make_request(athlete_activities_url)
 
+    def fetch_and_save_athlete_data(self):
+        athlete_data = self.get_athlete_data()
+        if athlete_data:
+            self.save_json_to_file(athlete_data, 'athlete_data.json')
+
+    def fetch_and_save_activities_data(self, page: int = 1, per_page: int = 200):
+        activities_data = self.get_athlete_activities_data(page=page, per_page=per_page)
+        if activities_data:
+            self.save_json_to_file(activities_data, 'activities_data.json')
+
     def extract_activity_ids(self, activities_data) -> List:
         return [activity['id'] for activity in activities_data]
+
