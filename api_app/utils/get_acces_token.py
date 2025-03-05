@@ -22,7 +22,7 @@ class APICache:
             cls._instance = super(APICache, cls).__new__(cls)
         return cls._instance
 
-    def get_access_token(self):
+    def get_access_token(self) -> Dict[str, Any]:
         if self._data is None:
             self._make_api_call()
         return self._data
@@ -31,14 +31,14 @@ class APICache:
         client_id = os.getenv('CLIENT_ID')
         client_secret = os.getenv('CLIENT_SECRET')
         code = os.getenv('CODE')
-        code = '4d0d143506695dbd839acbb326b23c98ce0a0ffb'
+        code = 'f8cae06dd860972bfa9acfecdf8b7c192555ff3d'
         url = f"https://www.strava.com/oauth/token?client_id={client_id}&client_secret={client_secret}&code={code}&grant_type=authorization_code"
 
         try:
             payload = {}
             headers = {}
 
-            logging.info("Sending request")
+            logging.info("Sending token request")
             response = requests.request("POST", url, headers=headers, data=payload)
             response.raise_for_status()
             self._data = json.loads(response.text)
