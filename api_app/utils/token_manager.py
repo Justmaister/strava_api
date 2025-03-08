@@ -1,9 +1,13 @@
-import requests
-import json
 import os
+import sys
 import time
 import logging
+import json
+
+import requests
 from dotenv import load_dotenv
+
+from .thinker_pop_up import ask_for_code
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 load_dotenv()
@@ -18,11 +22,12 @@ class TokenManager:
         logging.info("Loading Environment Variables")
         ## Cambiar el code per executarse al inicial la applicacio
         self.code = os.getenv("CODE")
+        self.code = '2845e38ce79ab67fb9a937623227475343f7244c'
 
         self.client_id = os.getenv("CLIENT_ID")
         self.client_secret = os.getenv("CLIENT_SECRET")
         self.refresh_token = None
-        self.token = None
+        self.access_token = None
         self.expires_at = 0
         self.load_token()
 
@@ -30,67 +35,71 @@ class TokenManager:
         """Load token from cache (file) if available."""
         logging.info("Loading Token from token_cache.json")
         if os.path.exists(TOKEN_FILE):
-            logging.info("I am here")
             try:
                 with open(TOKEN_FILE, "r") as file:
                     data = json.load(file)
-                    self.token = data.get("access_token")
+                    self.access_token = data.get("access_token")
                     self.refresh_token = data.get("refresh_token")
                     self.expires_at = data.get("expires_at", 0)
             except Exception as e:
                 logging.error("Error loading token: %s", e)
 
-    def save_token(self, token_data):
+    def save_token(self, token_data: dict):
         """Save token to cache."""
         logging.info("Saving token to token_cache.json")
-        with open(TOKEN_FILE, "w") as file:
-            json.dump(token_data, file)
+        try:
+            with open(TOKEN_FILE, "w") as file:
+                json.dump(token_data, file)
+            logging.info("Token saved successfully.")
+        except Exception as e:
+            logging.error("Error saving token: %s", e)
 
     def is_token_valid(self):
         """Check if the token is still valid."""
         logging.info("Checking if the Tokens are still valid")
-        if not self.token and time.time() < self.expires_at:
+        if self.access_token and time.time() < self.expires_at:
             return True
-        # else:
-        #     return None
+        return False
 
     def get_token(self):
         """Refresh token if expired."""
         if self.is_token_valid():
             logging.info("Tokens are already valid")
-            return
+            token_data = {
+                "access_token": self.access_token,
+                "refresh_token": self.refresh_token,
+                "expires_at": self.expires_at
+            }
+            return token_data
 
         logging.info("The Tokens are not valid")
-        logging.info(f"Sending response to {self.API_URL}")
-        payload = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "code": self.code,
-            "grant_type": "authorization_code"
-        }
 
-        response = requests.post(self.API_URL, data=payload)
-        response.raise_for_status()
-        response_data = response.json()
-        token_data = {
-            "access_token": response_data.get("access_token", ""),
-            "refresh_token": response_data.get("refresh_token", ""),
-            "expires_at": response_data.get("expires_at", "")
-        }
-        logging.info(f'the token data: {token_data}')
-        self.save_token(token_data)
-        # self._update_token(token_data)
+        self.code = ask_for_code()
 
-    def _update_token(self, token_data):
-        """Update the token and cache it."""
-        self.token = token_data["access_token"]
-        self.refresh_token = token_data["refresh_token"]
-        self.expires_at = token_data["expires_at"]
-        self.save_token(token_data)
+        if self.code:
+            logging.info(f"Sending response to {self.API_URL}")
+            payload = {
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "code": self.code,
+                "grant_type": "authorization_code"
+            }
 
+            response = requests.post(self.API_URL, data=payload)
+            response.raise_for_status()
+            response_data = response.json()
+            token_data = {
+                "access_token": response_data.get("access_token", ""),
+                "refresh_token": response_data.get("refresh_token", ""),
+                "expires_at": response_data.get("expires_at", "")
+            }
 
+            self.save_token(token_data)
+            return token_data
 
-if __name__ == "__main__":
-    token_manager = TokenManager()
-    data = token_manager.get_token()
-    print(data)
+        else:
+            logging.info("The User did not enter any Strava Code. The application is shuting down. \n "
+                         " \n"
+                         "For more details, visit: https://developers.strava.com/docs/getting-started/#oauth")
+            sys.exit()
+

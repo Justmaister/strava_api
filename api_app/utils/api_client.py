@@ -1,8 +1,10 @@
-import requests
-import logging
 import os
 import json
-from typing import Any, Dict, List
+
+import logging
+
+import requests
+from typing import Dict
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,7 +47,7 @@ class APIClient:
         logging.info("Data saved to %s", file_path)
 
     #Athlete module
-    def fetch_athlete_data(self):
+    def fetch_athlete_data(self) -> Dict:
         logging.info("Getting Athlete data")
         athlete_url = 'https://www.strava.com/api/v3/athlete'
         self.athlete_data = self.make_request(athlete_url, 'Athlete')
@@ -78,7 +80,7 @@ class APIClient:
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
             for activity_id in self.activities_ids_list:
                 activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-                self.activity_id_data = self.make_request(activity_url, f'Acivity {activity_id}')
+                self.activity_id_data = self.make_request(activity_url, f'Acivity ID {activity_id}')
                 self.save_json_to_file(self.activity_id_data, f'activity_{activity_id}.json', 'activities')
         else:
             logging.info("Athletes Activities data not found")
@@ -91,7 +93,7 @@ class APIClient:
         self.fetch_athlete_activities_data(page=1, per_page=10)
         self.save_athlete_activities_data()
 
-        self.fetch_and_save_activities_data()
+        # self.fetch_and_save_activities_data()
 
     #Routes module
     def fetch_and_save_routes_data(self):
