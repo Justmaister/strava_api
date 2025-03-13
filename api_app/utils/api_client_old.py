@@ -5,7 +5,7 @@ import requests
 from dotenv import load_dotenv
 from typing import Dict, Any, Optional
 
-# Configure Logging & Load environment variables from a .env file
+# Configure Logging & Load environment variables from .env file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 load_dotenv()
 
@@ -131,8 +131,6 @@ class APIClient:
 
     def process_activities(self) -> None:
         self.fetch_athlete_data()
-        # self.save_athlete_data()
-
         self.fetch_athlete_activities_data(page=1, per_page=10)
         self.save_athlete_and_athlete_activities_data()
 

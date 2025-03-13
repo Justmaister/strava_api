@@ -8,8 +8,7 @@ from dotenv import load_dotenv
 from .thinker_pop_up import ask_for_code
 from typing import Optional
 
-# Configure Logging & Load environment variables from a .env file
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Load environment variables from .env file
 load_dotenv()
 
 TOKEN_FILE = "token_cache.json"
