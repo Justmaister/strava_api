@@ -4,8 +4,8 @@ import json
 import logging
 
 import requests
-from typing import Dict
 from dotenv import load_dotenv
+from typing import Dict, Any
 
 load_dotenv()
 
@@ -18,7 +18,7 @@ class APIClient:
             'authorization': f'Bearer {self.access_token}'
         }
 
-    def make_request(self, url: str, module: str):
+    def make_request(self, url: str, module: str) -> Dict[str, Any]:
         try:
             logging.info(f"Sending {module} request to %s", url)
             response = requests.get(url, headers=self.headers)
@@ -32,7 +32,7 @@ class APIClient:
             logging.error("An error occurred: %s", err)
             return None
 
-    def save_json_to_file(self, data: dict, filename: str, module: str = ''):
+    def save_json_to_file(self, data: dict, filename: str, module: str = '') -> None:
         if module and module not in self.ALLOWED_MODULES:
             raise ValueError(f"Invalid module: {module}. Allowed modules are: {', '.join(self.ALLOWED_MODULES)}")
 
@@ -47,20 +47,20 @@ class APIClient:
         logging.info("Data saved to %s", file_path)
 
     #Athlete module
-    def fetch_athlete_data(self) -> Dict:
+    def fetch_athlete_data(self) -> Dict[str, Any]:
         logging.info("Getting Athlete data")
         athlete_url = 'https://www.strava.com/api/v3/athlete'
         self.athlete_data = self.make_request(athlete_url, 'Athlete')
         return self.athlete_data
 
-    def save_athlete_data(self):
+    def save_athlete_data(self) -> None:
         if self.athlete_data:
             self.save_json_to_file(self.athlete_data, 'athlete_data.json')
         else:
             logging.warning(f"Athlete data not loaded")
 
     #Activities module
-    def fetch_athlete_activities_data(self, page: int = 1, per_page: int = 200) -> Dict:
+    def fetch_athlete_activities_data(self, page: int = 1, per_page: int = 200) -> Dict[str, Any]:
         logging.info("Getting Athlete Activities data")
         athlete_activities_url = 'https://www.strava.com/api/v3/athlete/activities'
         self.headers['page'] = str(page)
@@ -68,13 +68,13 @@ class APIClient:
         self.athlete_activities_data = self.make_request(athlete_activities_url, 'Athlete Activities')
         return self.athlete_activities_data
 
-    def save_athlete_activities_data(self):
+    def save_athlete_activities_data(self) -> None:
         if self.athlete_activities_data:
             self.save_json_to_file(self.athlete_activities_data, 'athlete_activities_data.json')
         else:
             logging.warning("Athletes Activities data not loaded")
 
-    def fetch_and_save_activities_data(self):
+    def fetch_and_save_activities_data(self) -> None:
         logging.info("Getting Activities data")
         if self.athlete_activities_data:
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]

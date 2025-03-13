@@ -98,7 +98,7 @@ class TokenManager:
             return token_data
 
         else:
-            logging.info("The User did not enter any Strava Code. The application is shuting down. \n "
+            logging.info("User did not enter any Strava Code. The application is shuting down. \n "
                          " \n"
                          "For more details, visit: https://developers.strava.com/docs/getting-started/#oauth")
             sys.exit()
