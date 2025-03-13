@@ -3,12 +3,12 @@ import sys
 import time
 import logging
 import json
-
 import requests
 from dotenv import load_dotenv
-
 from .thinker_pop_up import ask_for_code
+from typing import Optional
 
+# Configure Logging & Load environment variables from a .env file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 load_dotenv()
 
@@ -17,21 +17,19 @@ TOKEN_FILE = "token_cache.json"
 class TokenManager:
     API_URL = "https://www.strava.com/oauth/token"
 
-
     def __init__(self):
+        """
+        Initialize the TokenManager and load environment variables.
+        """
         logging.info("Loading Environment Variables")
-        ## Cambiar el code per executarse al inicial la applicacio
-        self.code = os.getenv("CODE")
-        self.code = '2845e38ce79ab67fb9a937623227475343f7244c'
-
-        self.client_id = os.getenv("CLIENT_ID")
-        self.client_secret = os.getenv("CLIENT_SECRET")
-        self.refresh_token = None
-        self.access_token = None
-        self.expires_at = 0
+        self.client_id = os.getenv("CLIENT_ID") # Get the client ID from environment variables
+        self.client_secret = os.getenv("CLIENT_SECRET") # Get the client secret from environment variables
+        self.refresh_token: Optional[str] = None  # Initialize refresh token
+        self.access_token: Optional[str] = None  # Initialize access token
+        self.expires_at: int = 0  # Initialize token expiration time
         self.load_token()
 
-    def load_token(self):
+    def load_token(self) -> None:
         """Load token from cache (file) if available."""
         logging.info("Loading Token from token_cache.json")
         if os.path.exists(TOKEN_FILE):
@@ -44,7 +42,7 @@ class TokenManager:
             except Exception as e:
                 logging.error("Error loading token: %s", e)
 
-    def save_token(self, token_data: dict):
+    def save_token(self, token_data: dict) -> None:
         """Save token to cache."""
         logging.info("Saving token to token_cache.json")
         try:
@@ -54,15 +52,21 @@ class TokenManager:
         except Exception as e:
             logging.error("Error saving token: %s", e)
 
-    def is_token_valid(self):
-        """Check if the token is still valid."""
+    def is_token_valid(self) -> bool:
+        """Check if the token is still valid.
+
+        :return: True if the token is valid, False otherwise.
+        """
         logging.info("Checking if the Tokens are still valid")
         if self.access_token and time.time() < self.expires_at:
             return True
         return False
 
-    def get_token(self):
-        """Refresh token if expired."""
+    def get_token(self) -> dict:
+        """Refresh token if expired.
+
+        :return: The token data as a dictionary.
+        """
         if self.is_token_valid():
             logging.info("Tokens are already valid")
             token_data = {
@@ -73,8 +77,7 @@ class TokenManager:
             return token_data
 
         logging.info("The Tokens are not valid")
-
-        self.code = ask_for_code()
+        self.code = ask_for_code() # Prompt user for the authorization code
 
         if self.code:
             logging.info(f"Sending response to {self.API_URL}")
@@ -94,12 +97,11 @@ class TokenManager:
                 "expires_at": response_data.get("expires_at", "")
             }
 
-            self.save_token(token_data)
+            self.save_token(token_data) # Save the new token data
             return token_data
 
         else:
             logging.info("User did not enter any Strava Code. The application is shuting down. \n "
-                         " \n"
                          "For more details, visit: https://developers.strava.com/docs/getting-started/#oauth")
             sys.exit()
 
