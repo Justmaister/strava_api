@@ -30,7 +30,7 @@ class TokenManager:
 
     def load_token(self) -> None:
         """Load token from cache (file) if available."""
-        logging.info("Loading Token from token_cache.json")
+        logging.info(f"Loading Token from {TOKEN_FILE}")
         if os.path.exists(TOKEN_FILE):
             try:
                 with open(TOKEN_FILE, "r") as file:

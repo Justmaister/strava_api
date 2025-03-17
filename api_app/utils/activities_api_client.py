@@ -3,7 +3,7 @@ from typing import Dict, Any, Optional
 from .base_api_client import BaseAPIClient
 
 class ActivityAPIClient(BaseAPIClient):
-    def fetch_athlete_activities_data(self, page: int = 1, per_page: int = 200) -> Optional[Dict[str, Any]]:
+    def fetch_athlete_activities_data(self, page: int = 3, per_page: int = 200) -> Optional[Dict[str, Any]]:
         """
         Fetch athlete activities data from the Strava API.
 
