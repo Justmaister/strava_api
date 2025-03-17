@@ -63,4 +63,4 @@ class BaseAPIClient:
         # Write the data to the JSON file
         with open(file_path, 'w') as json_file:
             json.dump(data, json_file, indent=4)
-        logging.info("Data saved to %s", file_path)
+        logging.info("Data saved to %s",  os.path.basename(file_path))
