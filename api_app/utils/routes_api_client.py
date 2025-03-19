@@ -29,10 +29,7 @@ class RoutesAPIClient(BaseAPIClient):
         routes_url = f'https://www.strava.com/api/v3/athletes/{self.id}/routes'
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
-        self.routes_data = self.make_request(routes_url, 'Routes')
-
-        logging.info(f"The data returned: {self.routes_data}")
-
+        self.routes_data = self.make_request(routes_url, 'routes')
         return self.routes_data
 
     def save_routes_data(self) -> None:
@@ -40,6 +37,8 @@ class RoutesAPIClient(BaseAPIClient):
         Save the fetched routes data to a JSON file.
         """
         if self.routes_data:
-            self.save_json_to_file(self.routes_data, 'routes_data.json')
+            self.save_json_to_file(self.routes_data, 'routes_data.json', 'routes')
+        elif isinstance(self.routes_data, (list, dict)) and not self.routes_data:
+            logging.warning("Routes data is empty. Skipping save operation.")
         else:
             logging.warning("Routes data not saved!")
