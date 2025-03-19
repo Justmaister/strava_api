@@ -20,5 +20,7 @@ class AthleteAPIClient(BaseAPIClient):
         """
         if self.athlete_data:
             self.save_json_to_file(self.athlete_data, 'athlete_data.json')
+        elif isinstance(self.athlete_data, (list, dict)) and not self.athlete_data:
+            logging.info("Routes data is empty. Skipping save operation.")
         else:
             logging.warning("Athlete data not saved!")

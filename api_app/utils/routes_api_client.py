@@ -30,9 +30,6 @@ class RoutesAPIClient(BaseAPIClient):
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
         self.routes_data = self.make_request(routes_url, 'Routes')
-
-        logging.info(f"The data returned: {self.routes_data}")
-
         return self.routes_data
 
     def save_routes_data(self) -> None:
@@ -41,5 +38,7 @@ class RoutesAPIClient(BaseAPIClient):
         """
         if self.routes_data:
             self.save_json_to_file(self.routes_data, 'routes_data.json')
+        elif isinstance(self.routes_data, (list, dict)) and not self.routes_data:
+            logging.info("Routes data is empty. Skipping save operation.")
         else:
             logging.warning("Routes data not saved!")

@@ -41,5 +41,7 @@ class ActivityAPIClient(BaseAPIClient):
                     self.save_json_to_file(self.activity_id_data, f'activity_{activity_id}.json', 'activities')
                 else:
                     logging.warning(f"No data found for Activity ID {activity_id}")
+        elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
+            logging.info("Routes data is empty. Skipping save operation.")
         else:
             logging.info("Athletes Activities data not found")
