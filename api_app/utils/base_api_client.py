@@ -5,7 +5,7 @@ import requests
 from typing import Dict, Any, Optional
 
 class BaseAPIClient:
-    ALLOWED_MODULES = ['activities', 'routes']  # Define allowed modules for saving data
+    ALLOWED_MODULES = ['athlete', 'activities', 'routes']  # Define allowed modules for saving data
 
     def __init__(self, access_token: str):
         """
@@ -27,6 +27,9 @@ class BaseAPIClient:
         :param module: The name of the module for logging purposes.
         :return: The JSON response as a dictionary, or None if an error occurs.
         """
+        if module and module not in self.ALLOWED_MODULES:
+            raise ValueError(f"Invalid module: {module}. Allowed modules are: {', '.join(self.ALLOWED_MODULES)}")
+
         try:
             logging.info(f"Sending {module} request to %s", url)
             response = requests.get(url, headers=self.headers)  # Send the GET request
@@ -40,7 +43,7 @@ class BaseAPIClient:
             logging.error("An error occurred: %s", err)
             return None
 
-    def save_json_to_file(self, data: dict, filename: str, module: str = '') -> None:
+    def save_json_to_file(self, data: dict, filename: str, module: str) -> None:
         """
         Save the given data to a JSON file.
 
@@ -55,7 +58,7 @@ class BaseAPIClient:
 
         # Define the directory to save the data
         data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
-        if module:
+        if module and module != 'athlete':
             data_dir = os.path.join(data_dir, module)
         os.makedirs(data_dir, exist_ok=True)
         file_path = os.path.join(data_dir, filename)

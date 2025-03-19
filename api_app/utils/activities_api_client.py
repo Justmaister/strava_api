@@ -15,7 +15,7 @@ class ActivityAPIClient(BaseAPIClient):
         athlete_activities_url = 'https://www.strava.com/api/v3/athlete/activities'
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
-        self.athlete_activities_data = self.make_request(athlete_activities_url, 'Athlete Activities')
+        self.athlete_activities_data = self.make_request(athlete_activities_url, 'activities')
         return self.athlete_activities_data
 
     def save_athlete_activities_data(self) -> None:
@@ -23,7 +23,7 @@ class ActivityAPIClient(BaseAPIClient):
         Save the fetched athlete activities data to a JSON file.
         """
         if self.athlete_activities_data:
-            self.save_json_to_file(self.athlete_activities_data, 'athlete_activities_data.json')
+            self.save_json_to_file(self.athlete_activities_data, 'athlete_activities_data.json', 'activities')
         else:
             logging.warning("Athletes Activities data not saved!")
 
@@ -36,7 +36,7 @@ class ActivityAPIClient(BaseAPIClient):
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
             for activity_id in self.activities_ids_list:
                 activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-                self.activity_id_data = self.make_request(activity_url, f'Acivity ID {activity_id}')
+                self.activity_id_data = self.make_request(activity_url, 'activities')
                 if self.activity_id_data:  # Check if data was retrieved successfully
                     self.save_json_to_file(self.activity_id_data, f'activity_{activity_id}.json', 'activities')
                 else:

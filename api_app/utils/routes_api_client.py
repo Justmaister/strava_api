@@ -29,7 +29,7 @@ class RoutesAPIClient(BaseAPIClient):
         routes_url = f'https://www.strava.com/api/v3/athletes/{self.id}/routes'
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
-        self.routes_data = self.make_request(routes_url, 'Routes')
+        self.routes_data = self.make_request(routes_url, 'routes')
         return self.routes_data
 
     def save_routes_data(self) -> None:

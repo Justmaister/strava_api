@@ -19,8 +19,8 @@ class APIManager:
     def process_activities(self) -> None:
         self.athlete_client.fetch_athlete_data()
         self.athlete_client.save_athlete_data()
-        self.athlete_client.fetch_athlete_stats()
-        self.athlete_client.save_athlete_states_data()
+        # self.athlete_client.fetch_athlete_stats()
+        # self.athlete_client.save_athlete_states_data()
         self.athlete_client.fetch_athlete_zone_data()
         self.athlete_client.save_athlete_zones_data()
 
@@ -28,5 +28,5 @@ class APIManager:
         # self.activity_client.save_athlete_activities_data()
         # self.activity_client.fetch_and_save_activities_data()
 
-        self.routes_client.fetch_routes_data()
-        self.routes_client.save_routes_data()
+        # self.routes_client.fetch_routes_data()
+        # self.routes_client.save_routes_data()
