@@ -42,6 +42,6 @@ class ActivityAPIClient(BaseAPIClient):
                 else:
                     logging.warning(f"No data found for Activity ID {activity_id}")
         elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
-            logging.info("Routes data is empty. Skipping save operation.")
+            logging.warning("Athletes Activities data is empty. Skipping save operation.")
         else:
-            logging.info("Athletes Activities data not found")
+            logging.warning("Athletes Activities data not found")

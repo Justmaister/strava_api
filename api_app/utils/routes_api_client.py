@@ -37,8 +37,8 @@ class RoutesAPIClient(BaseAPIClient):
         Save the fetched routes data to a JSON file.
         """
         if self.routes_data:
-            self.save_json_to_file(self.routes_data, 'routes_data.json')
+            self.save_json_to_file(self.routes_data, 'routes_data.json', 'routes')
         elif isinstance(self.routes_data, (list, dict)) and not self.routes_data:
-            logging.info("Routes data is empty. Skipping save operation.")
+            logging.warning("Routes data is empty. Skipping save operation.")
         else:
             logging.warning("Routes data not saved!")
