@@ -2,6 +2,7 @@ import os
 import json
 import logging
 from typing import Dict, Any, Optional
+
 from .base_api_client import BaseAPIClient
 
 # ATHLETE_FILE = 'api_app/data/athlete_data.json'

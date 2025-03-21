@@ -1,8 +1,10 @@
+import aiohttp
 import os
 import json
 import logging
-import requests
 from typing import Dict, Any, Optional
+
+import requests
 
 class BaseAPIClient:
     ALLOWED_MODULES = ['athlete', 'activities', 'routes']  # Define allowed modules for saving data
@@ -21,7 +23,7 @@ class BaseAPIClient:
 
     def make_request(self, url: str, module: str) -> Optional[Dict[str, Any]]:
         """
-        Make a GET request to the specified URL and return the JSON response.
+        Make a GET HTTPS request to the specified URL and return the JSON response.
 
         :param url: The URL to send the request to.
         :param module: The name of the module for logging purposes.
@@ -41,6 +43,32 @@ class BaseAPIClient:
             return None
         except Exception as err:
             logging.error("An error occurred: %s", err)
+            return None
+
+
+    async def make_async_request(self, url: str, module: str) -> Optional[Dict[str, Any]]:
+        """
+        Make a asynchronous GET HTTPS request to the specified URL and return the JSON response.
+
+        :param url: The URL to send the request to.
+        :param module: The name of the module for logging purposes.
+        :return: The JSON response as a dictionary, or None if an error occurs.
+        """
+
+        if module and module not in self.ALLOWED_MODULES:
+            raise ValueError(f"Invalid module: {module}. Allowed modules are: {', '.join(self.ALLOWED_MODULES)}")
+
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=self.headers) as response:
+                    logging.info(f"Sending {module} request to %s", url)
+                    if response.status == 200:
+                        return await response.json()
+                    else:
+                        logging.warning(f"Failed to fetch {module} data: {response.status}")
+                        return None
+        except Exception as e:
+            logging.error(f"Error fetching {module} data: {str(e)}")
             return None
 
     def save_json_to_file(self, data: dict, filename: str, module: str) -> None:

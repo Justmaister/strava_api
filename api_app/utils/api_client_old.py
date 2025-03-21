@@ -1,9 +1,10 @@
 import os
 import json
 import logging
+from typing import Dict, Any, Optional
+
 import requests
 from dotenv import load_dotenv
-from typing import Dict, Any, Optional
 
 # Configure Logging & Load environment variables from .env file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
