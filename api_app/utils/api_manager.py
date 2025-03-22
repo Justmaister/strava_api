@@ -18,12 +18,6 @@ class APIManager:
         self.activity_client = ActivityAPIClient(access_token)
         self.routes_client = RoutesAPIClient(access_token)
 
-    async def process_activities_async(self) -> None:
-        """
-        Async version of process_activities
-        """
-        await self.activity_client.fetch_and_save_activities_data_async()
-
     def process_activities(self) -> None:
         # self.athlete_client.fetch_athlete_data()
         # self.athlete_client.save_athlete_data()

@@ -8,7 +8,7 @@ from .base_api_client import BaseAPIClient
 class ActivityAPIClient(BaseAPIClient):
     def fetch_athlete_activities_data(self, page: int = 3, per_page: int = 200) -> Optional[Dict[str, Any]]:
         """
-        Fetch athlete activities data from the Strava API.
+        Fetch athlete activities data.
 
         :param page: The page number for pagination.
         :param per_page: The number of activities per page.
@@ -34,7 +34,6 @@ class ActivityAPIClient(BaseAPIClient):
         """
         Fetch and save individual activities data.
         """
-
         start_time = time.time()
 
         logging.info("Getting Activities data")
@@ -74,36 +73,6 @@ class ActivityAPIClient(BaseAPIClient):
                     self.save_json_to_file(activity_data, f'activity_{activity_id}.json', 'activities')
                 else:
                     logging.warning(f"No data found for Activity ID {activity_id}")
-
-
-            # for activity_id in self.activities_ids_list:
-            #     activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-            #     logging.info(f"The url is: {activity_url}")
-            #     await asyncio.gather(*(self.make_async_request(url, 'activities') for url in activity_url))
-
-
-            # Crear todas las URLs primero
-            # urls = [f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-            #        for activity_id in self.activities_ids_list]
-
-            # # Hacer las llamadas en paralelo
-            # activities_data = await asyncio.gather(
-            #     *(self.make_async_request(url, 'activities') for url in urls)
-            # )
-
-
-            # ### OLD code
-            # for activity_id in self.activities_ids_list:
-            #     activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-            #     self.activity_id_data = self.make_request(activity_url, 'activities')
-
-            # ### AI code
-            # # Create tasks for all activities
-            # tasks = [self.async_save_activity_data(activity_id)
-            #         for activity_id in self.activities_ids_list]
-
-            # # Run all tasks concurrently
-            # await asyncio.gather(*tasks)
 
         else:
             logging.warning("Athletes Activities data not found")
