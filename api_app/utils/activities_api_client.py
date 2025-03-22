@@ -8,7 +8,7 @@ from .base_api_client import BaseAPIClient
 class ActivityAPIClient(BaseAPIClient):
     def fetch_athlete_activities_data(self, page: int = 3, per_page: int = 200) -> Optional[Dict[str, Any]]:
         """
-        Fetch athlete activities data.
+        Fetch athlete Activities data.
 
         :param page: The page number for pagination.
         :param per_page: The number of activities per page.
@@ -30,32 +30,32 @@ class ActivityAPIClient(BaseAPIClient):
         else:
             logging.warning("Athletes Activities data not saved!")
 
-    def fetch_and_save_activities_data(self) -> None:
-        """
-        Fetch and save individual activities data.
-        """
-        start_time = time.time()
+    # def fetch_and_save_activities_data(self) -> None:
+    #     """
+    #     Fetch and save Activities data.
+    #     """
+    #     start_time = time.time()
 
-        logging.info("Getting Activities data")
-        if self.athlete_activities_data:
-            self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
-            for activity_id in self.activities_ids_list:
-                activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-                self.activity_id_data = self.make_request(activity_url, 'activities')
-                if self.activity_id_data:  # Check if data was retrieved successfully
-                    self.save_json_to_file(self.activity_id_data, f'activity_{activity_id}.json', 'activities')
-                else:
-                    logging.warning(f"No data found for Activity ID {activity_id}")
-        elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
-            logging.warning("Athletes Activities data is empty. Skipping save operation.")
-        else:
-            logging.warning("Athletes Activities data not found")
+    #     logging.info("Getting Activities data")
+    #     if self.athlete_activities_data:
+    #         self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
+    #         for activity_id in self.activities_ids_list:
+    #             activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+    #             self.activity_id_data = self.make_request(activity_url, 'activities')
+    #             if self.activity_id_data:  # Check if data was retrieved successfully
+    #                 self.save_json_to_file(self.activity_id_data, f'activity_{activity_id}.json', 'activities')
+    #             else:
+    #                 logging.warning(f"No data found for Activity ID {activity_id}")
+    #     elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
+    #         logging.warning("Athletes Activities data is empty. Skipping save operation.")
+    #     else:
+    #         logging.warning("Athletes Activities data not found")
 
-        logging.info(f"Sync code cost {time.time() - start_time:.2f} seconds")
+    #     logging.info(f"Sync code cost {time.time() - start_time:.2f} seconds")
 
     async def fetch_and_save_activities_data_async(self) -> None:
         """
-        Fetch and save individual activities data asynchronously.
+        Fetch and save Activities data asynchronously.
         """
 
         start_time = time.time()
@@ -73,8 +73,63 @@ class ActivityAPIClient(BaseAPIClient):
                     self.save_json_to_file(activity_data, f'activity_{activity_id}.json', 'activities')
                 else:
                     logging.warning(f"No data found for Activity ID {activity_id}")
-
+        elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
+            logging.warning("Athletes Activities data is empty. Skipping save operation.")
         else:
             logging.warning("Athletes Activities data not found")
+
+        logging.info(f"Async sync code cost {time.time() - start_time:.2f} seconds")
+
+    async def fetch_and_save_activities_laps_data_async(self) -> None:
+        """
+        Fetch and save Activities Laps data asynchronously.
+        """
+
+        start_time = time.time()
+
+        logging.info("Getting Activities Laps data asynchronously")
+        if self.athlete_activities_data:
+            self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
+
+            urls = [f'https://www.strava.com/api/v3/activities/{activity_id}/laps'
+                   for activity_id in self.activities_ids_list]
+            activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in urls))
+
+            for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
+                if activity_data:
+                    self.save_json_to_file(activity_data, f'activity_{activity_id}_laps.json', 'activities')
+                else:
+                    logging.warning(f"No Laps data found for Activity ID {activity_id}")
+        elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
+            logging.warning("Athletes Activities data is empty. Skipping save operation.")
+        else:
+            logging.warning("Athletes Activities Laps data not found")
+
+        logging.info(f"Async sync code cost {time.time() - start_time:.2f} seconds")
+
+    async def fetch_and_save_activities_zones_data_async(self) -> None:
+        """
+        Fetch and save Activities Zones data asynchronously.
+        """
+
+        start_time = time.time()
+
+        logging.info("Getting Activities Zones data asynchronously")
+        if self.athlete_activities_data:
+            self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
+
+            urls = [f'https://www.strava.com/api/v3/activities/{activity_id}/zones'
+                   for activity_id in self.activities_ids_list]
+            activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in urls))
+
+            for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
+                if activity_data:
+                    self.save_json_to_file(activity_data, f'activity_{activity_id}_zones.json', 'activities')
+                else:
+                    logging.warning(f"No Zones data found for Activity ID {activity_id}")
+        elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
+            logging.warning("Athletes Activities data is empty. Skipping save operation.")
+        else:
+            logging.warning("Athletes Activities Zones data not found")
 
         logging.info(f"Async sync code cost {time.time() - start_time:.2f} seconds")
