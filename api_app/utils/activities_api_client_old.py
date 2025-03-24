@@ -3,7 +3,7 @@ import logging
 import time
 from typing import Dict, Any, Optional
 
-from .base_api_client import BaseAPIClient, RateLimitChecker
+from .base_api_client import BaseAPIClient
 
 class ActivityAPIClient(BaseAPIClient):
     def fetch_athlete_activities_data(self, page: int = 3, per_page: int = 200) -> Optional[Dict[str, Any]]:
@@ -30,6 +30,29 @@ class ActivityAPIClient(BaseAPIClient):
         else:
             logging.warning("Athletes Activities data not saved!")
 
+    # def fetch_and_save_activities_data(self) -> None:
+    #     """
+    #     Fetch and save Activities data.
+    #     """
+    #     start_time = time.time()
+
+    #     logging.info("Getting Activities data")
+    #     if self.athlete_activities_data:
+    #         self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
+    #         for activity_id in self.activities_ids_list:
+    #             activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+    #             self.activity_id_data = self.make_request(activity_url, 'activities')
+    #             if self.activity_id_data:  # Check if data was retrieved successfully
+    #                 self.save_json_to_file(self.activity_id_data, f'activity_{activity_id}.json', 'activities')
+    #             else:
+    #                 logging.warning(f"No data found for Activity ID {activity_id}")
+    #     elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
+    #         logging.warning("Athletes Activities data is empty. Skipping save operation.")
+    #     else:
+    #         logging.warning("Athletes Activities data not found")
+
+    #     logging.info(f"Sync code cost {time.time() - start_time:.2f} seconds")
+
     async def fetch_and_save_activities_data_async(self) -> None:
         """
         Fetch and save Activities data asynchronously.
@@ -43,60 +66,19 @@ class ActivityAPIClient(BaseAPIClient):
 
             urls = [f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
                    for activity_id in self.activities_ids_list]
+            activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in urls))
 
-            remaining_urls = []
-            total_requests = len(urls)
-            rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
-            logging.info(f"The rate limit remaining: {rate_limit_remaining}")
-            logging.info(f"The total_requests are: {total_requests}")
-
-            while total_requests > rate_limit_remaining:
-                start_while_time = time.time()
-                logging.info(f"The requests to make ({total_requests}) are bigger than the rate limit remaining ({rate_limit_remaining})")
-                logging.info("The while bucle starts until all api request have been completed. Limit 100 requests per 15 minutes")
-                batch_urls = urls[:rate_limit_remaining]
-                activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in (remaining_urls if remaining_urls else batch_urls)))
-
-                for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
-                    if activity_data:
-                        self.save_json_to_file(activity_data, f'activity_{activity_id}.json', 'activities')
-                    else:
-                        logging.warning(f"No data found for Activity ID {activity_id}")
-                logging.info(f"Async sync code cost {time.time() - start_while_time:.2f} seconds")
-
-                # Calculate wait time until the next 15-minute interval
-                current_time = time.localtime()
-                wait_minutes = (15 - (current_time.tm_min % 15) + 1) % 15
-                wait_seconds = wait_minutes * 60 - current_time.tm_sec
-
-                logging.warning(f"Waiting for {wait_minutes} minutes until the next 15-minute interval.")
-                await asyncio.sleep(wait_seconds)  # Wait until the next interval
-
-                remaining_urls = urls[rate_limit_remaining:]  # Get the remaining URLs
-                total_requests = len(remaining_urls)
-                self.make_readratelimit_api_call()
-                rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
-                logging.info(f"The rate limit remaining: {rate_limit_remaining}")
-                logging.info(f"Now the total_requests are: {total_requests}")
-
-            else:
-                start_else_time = time.time()
-                activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in (remaining_urls if remaining_urls else urls)))
-
-                for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
-                    if activity_data:
-                        self.save_json_to_file(activity_data, f'activity_{activity_id}.json', 'activities')
-                    else:
-                        logging.warning(f"No data found for Activity ID {activity_id}")
-
-                logging.info(f"Async sync code cost {time.time() - start_else_time:.2f} seconds")
-
+            for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
+                if activity_data:
+                    self.save_json_to_file(activity_data, f'activity_{activity_id}.json', 'activities')
+                else:
+                    logging.warning(f"No data found for Activity ID {activity_id}")
         elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
             logging.warning("Athletes Activities data is empty. Skipping save operation.")
         else:
             logging.warning("Athletes Activities data not found")
 
-        logging.info(f"All process time cost {time.time() - start_time:.2f} seconds")
+        logging.info(f"Async sync code cost {time.time() - start_time:.2f} seconds")
 
     async def fetch_and_save_activities_laps_data_async(self) -> None:
         """

@@ -20,8 +20,8 @@ class APIManager:
 
     def process_activities(self) -> None:
         ## Athlete
-        # self.athlete_client.fetch_athlete_data()
-        # self.athlete_client.save_athlete_data()
+        self.athlete_client.fetch_athlete_data()
+        self.athlete_client.save_athlete_data()
         # self.athlete_client.fetch_athlete_stats()
         # self.athlete_client.save_athlete_states_data()
         # self.athlete_client.fetch_athlete_zone_data()
@@ -32,9 +32,9 @@ class APIManager:
         self.activity_client.save_athlete_activities_data()
         # self.activity_client.fetch_and_save_activities_data() # OLD
 
-        # asyncio.run(self.activity_client.fetch_and_save_activities_data_async())
-        asyncio.run(self.activity_client.fetch_and_save_activities_laps_data_async())
-        asyncio.run(self.activity_client.fetch_and_save_activities_zones_data_async())
+        asyncio.run(self.activity_client.fetch_and_save_activities_data_async())
+        # asyncio.run(self.activity_client.fetch_and_save_activities_laps_data_async())
+        # asyncio.run(self.activity_client.fetch_and_save_activities_zones_data_async())
 
         ##Routes
         # self.routes_client.fetch_routes_data()
