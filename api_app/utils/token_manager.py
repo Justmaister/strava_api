@@ -3,10 +3,12 @@ import sys
 import time
 import logging
 import json
+from typing import Optional
+
 import requests
 from dotenv import load_dotenv
+
 from .thinker_pop_up import ask_for_code
-from typing import Optional
 
 # Load environment variables from .env file
 load_dotenv()

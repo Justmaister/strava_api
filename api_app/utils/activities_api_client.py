@@ -1,5 +1,8 @@
+import asyncio
 import logging
+import time
 from typing import Dict, Any, Optional
+
 from .base_api_client import BaseAPIClient
 
 class ActivityAPIClient(BaseAPIClient):
@@ -31,6 +34,9 @@ class ActivityAPIClient(BaseAPIClient):
         """
         Fetch and save individual activities data.
         """
+
+        start_time = time.time()
+
         logging.info("Getting Activities data")
         if self.athlete_activities_data:
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
@@ -45,3 +51,61 @@ class ActivityAPIClient(BaseAPIClient):
             logging.warning("Athletes Activities data is empty. Skipping save operation.")
         else:
             logging.warning("Athletes Activities data not found")
+
+        logging.info(f"Sync code cost {time.time() - start_time:.2f} seconds")
+
+    async def fetch_and_save_activities_data_async(self) -> None:
+        """
+        Fetch and save individual activities data asynchronously.
+        """
+
+        start_time = time.time()
+
+        logging.info("Getting Activities data asynchronously")
+        if self.athlete_activities_data:
+            self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
+
+            urls = [f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+                   for activity_id in self.activities_ids_list]
+            activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in urls))
+
+            for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
+                if activity_data:
+                    self.save_json_to_file(activity_data, f'activity_{activity_id}.json', 'activities')
+                else:
+                    logging.warning(f"No data found for Activity ID {activity_id}")
+
+
+            # for activity_id in self.activities_ids_list:
+            #     activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+            #     logging.info(f"The url is: {activity_url}")
+            #     await asyncio.gather(*(self.make_async_request(url, 'activities') for url in activity_url))
+
+
+            # Crear todas las URLs primero
+            # urls = [f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+            #        for activity_id in self.activities_ids_list]
+
+            # # Hacer las llamadas en paralelo
+            # activities_data = await asyncio.gather(
+            #     *(self.make_async_request(url, 'activities') for url in urls)
+            # )
+
+
+            # ### OLD code
+            # for activity_id in self.activities_ids_list:
+            #     activity_url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+            #     self.activity_id_data = self.make_request(activity_url, 'activities')
+
+            # ### AI code
+            # # Create tasks for all activities
+            # tasks = [self.async_save_activity_data(activity_id)
+            #         for activity_id in self.activities_ids_list]
+
+            # # Run all tasks concurrently
+            # await asyncio.gather(*tasks)
+
+        else:
+            logging.warning("Athletes Activities data not found")
+
+        logging.info(f"Async sync code cost {time.time() - start_time:.2f} seconds")

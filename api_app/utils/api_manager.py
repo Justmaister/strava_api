@@ -1,4 +1,6 @@
+import asyncio
 import logging
+
 from .athlete_api_client import AthleteAPIClient
 from .activities_api_client import ActivityAPIClient
 from .routes_api_client import RoutesAPIClient
@@ -16,17 +18,24 @@ class APIManager:
         self.activity_client = ActivityAPIClient(access_token)
         self.routes_client = RoutesAPIClient(access_token)
 
+    async def process_activities_async(self) -> None:
+        """
+        Async version of process_activities
+        """
+        await self.activity_client.fetch_and_save_activities_data_async()
+
     def process_activities(self) -> None:
-        self.athlete_client.fetch_athlete_data()
-        self.athlete_client.save_athlete_data()
+        # self.athlete_client.fetch_athlete_data()
+        # self.athlete_client.save_athlete_data()
         # self.athlete_client.fetch_athlete_stats()
         # self.athlete_client.save_athlete_states_data()
-        self.athlete_client.fetch_athlete_zone_data()
-        self.athlete_client.save_athlete_zones_data()
+        # self.athlete_client.fetch_athlete_zone_data()
+        # self.athlete_client.save_athlete_zones_data()
 
-        # self.activity_client.fetch_athlete_activities_data(page=1, per_page=10)
-        # self.activity_client.save_athlete_activities_data()
+        self.activity_client.fetch_athlete_activities_data(page=1, per_page=10)
+        self.activity_client.save_athlete_activities_data()
         # self.activity_client.fetch_and_save_activities_data()
+        asyncio.run(self.activity_client.fetch_and_save_activities_data_async())
 
         # self.routes_client.fetch_routes_data()
         # self.routes_client.save_routes_data()
