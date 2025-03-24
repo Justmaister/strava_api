@@ -65,7 +65,12 @@ class BaseAPIClient:
                     if response.status == 200:
                         return await response.json()
                     else:
-                        logging.warning(f"Failed to fetch {module} data: {response.status}")
+                        logging.warning(
+                            f"Failed to fetch {module} data:\n"
+                            f"Status: {response.status}\n"
+                            f"Reason: {response.reason}\n"
+                            f"Headers: {dict(response.headers)}"
+                        )
                         return None
         except Exception as e:
             logging.error(f"Error fetching {module} data: {str(e)}")
