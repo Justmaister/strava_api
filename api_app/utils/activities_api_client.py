@@ -43,20 +43,44 @@ class ActivityAPIClient(BaseAPIClient):
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
             logging.info(f"Processing {len(self.activities_ids_list)} activities asynchronously")
 
-            urls = [f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-                   for activity_id in self.activities_ids_list]
+            # Create async function to check files and make request if needed
+            async def process_activity(activity_id: int):
+                filename = f'activity_{activity_id}.json'
+                file_exists = await self.check_json_file_exists(filename, 'activities')
+                if not file_exists:
+                    url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+                    return await self.make_async_request(url, 'activities')
+                else:
+                    logging.info(f"Skipping activity {activity_id}: File already exists")
+                    return None
+
+
+            # urls = [f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+            #        for activity_id in self.activities_ids_list]
 
             remaining_urls = []
-            total_requests = len(urls)
+            # total_requests = len(urls)
+            total_requests = len(self.activities_ids_list)
             rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
 
             logging.info(f"Rate limit status: {rate_limit_remaining} requests available out of {total_requests} needed")
 
+            # urls_to_process = []
+
+            # for url, activity_id in zip(urls, self.activities_ids_list[:rate_limit_remaining]):
+            #     filename = f'activity_{activity_id}.json'
+            #     if not self.check_json_file_exists(filename, 'activities'):
+            #         urls_to_process.append(url)
+            #     else:
+            #         logging.info(f"Skipping activity {activity_id}: File already exists")
+
+            # if urls_to_process:
+
             while total_requests > rate_limit_remaining:
                 start_while_time = time.time()
                 logging.info(f"Rate limit reached: Processing {rate_limit_remaining} async requests (pending: {total_requests})")
-                batch_urls = urls[:rate_limit_remaining]
-                activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in (remaining_urls if remaining_urls else batch_urls)))
+                current_urls = self.activities_ids_list[:rate_limit_remaining]
+                activities_data = await asyncio.gather(*(process_activity(activity_id) for activity_id in current_urls))
 
                 for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
                     if activity_data:
@@ -73,7 +97,7 @@ class ActivityAPIClient(BaseAPIClient):
                 logging.warning(f"Waiting for {wait_minutes} minutes until next rate limit window")
                 await asyncio.sleep(wait_seconds)  # Wait until the next interval
 
-                remaining_urls = urls[rate_limit_remaining:]  # Get the remaining URLs
+                remaining_urls = self.activities_ids_list[rate_limit_remaining:]  # Get the remaining URLs
                 total_requests = len(remaining_urls)
                 self.make_readratelimit_api_call()
                 rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
@@ -82,8 +106,8 @@ class ActivityAPIClient(BaseAPIClient):
 
             else:
                 start_else_time = time.time()
-                logging.info(f"Processing {len(remaining_urls if remaining_urls else urls)} async requests")
-                activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in (remaining_urls if remaining_urls else urls)))
+                logging.info(f"Processing {len(remaining_urls if remaining_urls else self.activities_ids_list)} async requests")
+                activities_data = await asyncio.gather(*(process_activity(activity_id) for activity_id in self.activities_ids_list))
 
                 for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
                     if activity_data:
