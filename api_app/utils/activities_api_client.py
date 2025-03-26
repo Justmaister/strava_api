@@ -14,7 +14,7 @@ class ActivityAPIClient(BaseAPIClient):
         :param per_page: The number of activities per page.
         :return: The athlete activities data as a dictionary, or None if an error occurs.
         """
-        logging.info("Getting Athlete Activities data")
+        logging.info("Fetching athlete activities data")
         athlete_activities_url = 'https://www.strava.com/api/v3/athlete/activities'
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
@@ -25,10 +25,11 @@ class ActivityAPIClient(BaseAPIClient):
         """
         Save the fetched athlete activities data to a JSON file.
         """
+        logging.info("Saving athlete activities data to JSON file")
         if self.athlete_activities_data:
             self.save_json_to_file(self.athlete_activities_data, 'athlete_activities_data.json', 'activities')
         else:
-            logging.warning("Athletes Activities data not saved!")
+            logging.warning("Unable to save athlete activities data: No data available")
 
     async def fetch_and_save_activities_data_async(self) -> None:
         """
@@ -36,10 +37,11 @@ class ActivityAPIClient(BaseAPIClient):
         """
 
         start_time = time.time()
+        logging.info("Starting asynchronous operation to fetch and save activities data")
 
-        logging.info("Getting Activities data asynchronously")
         if self.athlete_activities_data:
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
+            logging.info(f"Processing {len(self.activities_ids_list)} activities asynchronously")
 
             urls = [f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
                    for activity_id in self.activities_ids_list]
@@ -47,13 +49,12 @@ class ActivityAPIClient(BaseAPIClient):
             remaining_urls = []
             total_requests = len(urls)
             rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
-            logging.info(f"The rate limit remaining: {rate_limit_remaining}")
-            logging.info(f"The total_requests are: {total_requests}")
+
+            logging.info(f"Rate limit status: {rate_limit_remaining} requests available out of {total_requests} needed")
 
             while total_requests > rate_limit_remaining:
                 start_while_time = time.time()
-                logging.info(f"The requests to make ({total_requests}) are bigger than the rate limit remaining ({rate_limit_remaining})")
-                logging.info("The while bucle starts until all api request have been completed. Limit 100 requests per 15 minutes")
+                logging.info(f"Rate limit reached: Processing {rate_limit_remaining} async requests (pending: {total_requests})")
                 batch_urls = urls[:rate_limit_remaining]
                 activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in (remaining_urls if remaining_urls else batch_urls)))
 
@@ -61,26 +62,27 @@ class ActivityAPIClient(BaseAPIClient):
                     if activity_data:
                         self.save_json_to_file(activity_data, f'activity_{activity_id}.json', 'activities')
                     else:
-                        logging.warning(f"No data found for Activity ID {activity_id}")
-                logging.info(f"Async sync code cost {time.time() - start_while_time:.2f} seconds")
+                        logging.warning(f"Unable to save activity {activity_id}: No data available")
+                logging.info(f"Async processing completed in {time.time() - start_while_time:.2f} seconds")
 
                 # Calculate wait time until the next 15-minute interval
                 current_time = time.localtime()
                 wait_minutes = (15 - (current_time.tm_min % 15) + 1) % 15
                 wait_seconds = wait_minutes * 60 - current_time.tm_sec
 
-                logging.warning(f"Waiting for {wait_minutes} minutes until the next 15-minute interval.")
+                logging.warning(f"Waiting for {wait_minutes} minutes until next rate limit window")
                 await asyncio.sleep(wait_seconds)  # Wait until the next interval
 
                 remaining_urls = urls[rate_limit_remaining:]  # Get the remaining URLs
                 total_requests = len(remaining_urls)
                 self.make_readratelimit_api_call()
                 rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
-                logging.info(f"The rate limit remaining: {rate_limit_remaining}")
-                logging.info(f"Now the total_requests are: {total_requests}")
+                logging.info(f"New rate limit status: {rate_limit_remaining} requests available")
+                logging.info(f"Remaining requests to process: {total_requests}")
 
             else:
                 start_else_time = time.time()
+                logging.info(f"Processing {len(remaining_urls if remaining_urls else urls)} async requests")
                 activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in (remaining_urls if remaining_urls else urls)))
 
                 for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
@@ -89,14 +91,14 @@ class ActivityAPIClient(BaseAPIClient):
                     else:
                         logging.warning(f"No data found for Activity ID {activity_id}")
 
-                logging.info(f"Async sync code cost {time.time() - start_else_time:.2f} seconds")
+                logging.info(f"Async processing completed in {time.time() - start_else_time:.2f} seconds")
 
         elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
-            logging.warning("Athletes Activities data is empty. Skipping save operation.")
+            logging.warning("No activities data to process: Empty dataset received")
         else:
-            logging.warning("Athletes Activities data not found")
+            logging.warning("Unable to process activities: No data available")
 
-        logging.info(f"All process time cost {time.time() - start_time:.2f} seconds")
+        logging.info(f"Total async processing time: {time.time() - start_time:.2f} seconds")
 
     async def fetch_and_save_activities_laps_data_async(self) -> None:
         """
