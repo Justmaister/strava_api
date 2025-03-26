@@ -35,9 +35,16 @@ class BaseAPIClient:
         try:
             logging.info(f"Sending {module} request to %s", url)
             response = requests.get(url, headers=self.headers)  # Send the GET request
-            response.raise_for_status()  # Raise an error for bad responses (4xx and 5xx)
-            logging.info("Request successful")
-            return response.json()  # Return the JSON response
+            self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
+
+            if response.status_code == 200:
+                logging.info("Request successful")
+                return response.json()  # Return the JSON response
+            else:
+                logging.warning(f"Failed to fetch {module} data")
+                logging.warning(f"Status: {response.status_code}")
+                logging.warning(f"Reason: {response.reason}")
+                return None
         except requests.exceptions.HTTPError as http_err:
             logging.error("HTTP error occurred: %s", http_err)
             return None
@@ -60,20 +67,48 @@ class BaseAPIClient:
 
         try:
             async with aiohttp.ClientSession() as session:
+
+                rate_limit_checker = RateLimitChecker(self.rate_limit_usage)
+
+                if not rate_limit_checker.can_proceed():
+                    logging.warning("Rate limit exceeded. Cannot proceed with the request.")
+                    return None
+
                 async with session.get(url, headers=self.headers) as response:
                     logging.info(f"Sending {module} request to %s", url)
+                    self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
                     if response.status == 200:
+                        # self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
                         return await response.json()
                     else:
-                        logging.warning(
-                            f"Failed to fetch {module} data:\n"
-                            f"Status: {response.status}\n"
-                            f"Reason: {response.reason}\n"
-                            f"Headers: {dict(response.headers)}"
-                        )
+                        logging.warning(f"Failed to fetch {module} data")
+                        logging.warning(f"Status: {response.status_code}")
+                        logging.warning(f"Reason: {response.reason}")
                         return None
         except Exception as e:
             logging.error(f"Error fetching {module} data: {str(e)}")
+            return None
+
+
+    def make_readratelimit_api_call(self):
+        try:
+            logging.info(f"Sending request to get read rate limit usage")
+            response = requests.get('https://www.strava.com/api/v3/athlete', headers=self.headers)  # Send the GET request
+            self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
+
+            if response.status_code == 200:
+                logging.info("Request successful")
+                return response.json()  # Return the JSON response
+            else:
+                logging.warning("Failed to fetch read rate limit usage data")
+                logging.warning(f"Status: {response.status_code}")
+                logging.warning(f"Reason: {response.reason}")
+                return None
+        except requests.exceptions.HTTPError as http_err:
+            logging.error("HTTP error occurred: %s", http_err)
+            return None
+        except Exception as err:
+            logging.error("An error occurred: %s", err)
             return None
 
     def save_json_to_file(self, data: dict, filename: str, module: str) -> None:
@@ -100,3 +135,28 @@ class BaseAPIClient:
         with open(file_path, 'w') as json_file:
             json.dump(data, json_file, indent=4)
         logging.info("Data saved to %s",  os.path.basename(file_path))
+
+class RateLimitChecker:
+    def __init__(self, rate_limit_usage: Optional[str]):
+        """
+        Initialize the RateLimitChecker with the remaining rate limit.
+
+        :param rate_limit_usage: The remaining rate limit value as a string.
+        """
+        self.rate_limit_remaining = int(100 - float(rate_limit_usage.replace(',', '.'))) if rate_limit_usage else 0
+
+    def can_proceed(self) -> bool:
+        """
+        Check if the API calls can proceed based on the rate limit.
+
+        :return: True if API calls can proceed, False otherwise.
+        """
+        return self.rate_limit_remaining > 0
+
+    def get_rate_limit_remaining(self) -> int:
+        """
+        Check if the API calls can proceed based on the rate limit.
+
+        :return: True if API calls can proceed, False otherwise.
+        """
+        return self.rate_limit_remaining
