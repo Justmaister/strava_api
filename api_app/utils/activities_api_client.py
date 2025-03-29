@@ -26,7 +26,6 @@ class ActivityAPIClient(BaseAPIClient):
         """
         Save the fetched athlete activities data to a JSON file.
         """
-        logging.info("Saving athlete activities data to JSON file")
         if self.athlete_activities_data:
             self.save_json_to_file(self.athlete_activities_data, 'athlete_activities_data.json', 'activities')
         else:
@@ -44,36 +43,6 @@ class ActivityAPIClient(BaseAPIClient):
             logging.info(f"Found {len(self.activities_ids_list)} activities in athlete data")
             logging.info("Starting asynchronous processing of activities")
 
-            # # Create async function to make request and save the json file
-            # async def process_activity(activity_id: int):
-            #     filename = f'activity_{activity_id}.json'
-            #     try:
-            #         url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-            #         activity_data = await self.make_async_request(url, 'activities')
-            #         if activity_data:
-            #             await self.save_json_to_file_async(activity_data, filename, 'activities')
-            #             return activity_data
-            #         else:
-            #             logging.warning(f"Unable to fetch data for Activity ID {activity_id}")
-            #             return None
-            #     except Exception as e:
-            #         logging.error(f"Error processing activity {activity_id}: {str(e)}")
-            #         return None
-
-            # # Pre-check which activities need to be fetched
-            # activities_to_fetch = []
-            # for activity_id in self.activities_ids_list:
-            #     filename = f'activity_{activity_id}.json'
-            #     if not await self.check_json_file_exists(filename, 'activities'):
-            #         activities_to_fetch.append(activity_id)
-
-            # if not activities_to_fetch:
-            #     logging.info("No new activities to fetch - all files exist")
-            #     return
-
-            # remaining_urls = []
-            # total_requests = len(activities_to_fetch)
-
             remaining_ids = self.activities_ids_list.copy()
             total_requests = len(remaining_ids)
             rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
@@ -82,7 +51,7 @@ class ActivityAPIClient(BaseAPIClient):
 
             while total_requests > rate_limit_remaining:
                 start_while_time = time.time()
-                logging.info(f"Rate limit reached: Processing {rate_limit_remaining} async requests (pending: {total_requests})")
+                logging.info(f"Rate limit reached: Processing {rate_limit_remaining} async requests (pending: {total_requests - rate_limit_remaining})")
                 current_urls = remaining_ids[:rate_limit_remaining]
                 await asyncio.gather(*(
                     self.process_activity(activity_id, StravaEndpoints.ACTIVITIES)
@@ -128,7 +97,7 @@ class ActivityAPIClient(BaseAPIClient):
 
         start_time = time.time()
 
-        logging.info("Getting Activities Laps data asynchronously")
+        logging.info("Fetching Activities Laps data asynchronously")
         if self.athlete_activities_data:
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
 
@@ -155,7 +124,7 @@ class ActivityAPIClient(BaseAPIClient):
 
         start_time = time.time()
 
-        logging.info("Getting Activities Zones data asynchronously")
+        logging.info("Fetching Activities Zones data asynchronously")
         if self.athlete_activities_data:
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
 

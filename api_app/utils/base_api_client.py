@@ -40,6 +40,8 @@ class BaseAPIClient:
             response = requests.get(url, headers=self.headers)  # Send the GET request
             self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
 
+            if response.status_code == 429:
+                raise ValueError("Rate limit exceeded: Too many requests")
             if response.status_code == 200:
                 logging.info("Request successful")
                 return response.json()  # Return the JSON response

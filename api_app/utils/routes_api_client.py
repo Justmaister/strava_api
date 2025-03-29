@@ -26,7 +26,7 @@ class RoutesAPIClient(BaseAPIClient):
             except Exception as e:
                 logging.error("Error loading token: %s", e)
 
-        logging.info("Getting Routes data")
+        logging.info("Fetching Routes data")
         routes_url = f'https://www.strava.com/api/v3/athletes/{self.id}/routes'
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
