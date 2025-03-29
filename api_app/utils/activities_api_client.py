@@ -4,6 +4,7 @@ import time
 from typing import Dict, Any, Optional
 
 from .base_api_client import BaseAPIClient, RateLimitChecker
+from .endpoint_config import StravaEndpoints
 
 class ActivityAPIClient(BaseAPIClient):
     def fetch_athlete_activities_data(self, page: int = 3, per_page: int = 200) -> Optional[Dict[str, Any]]:
@@ -35,7 +36,6 @@ class ActivityAPIClient(BaseAPIClient):
         """
         Fetch and save Activities data asynchronously.
         """
-
         start_time = time.time()
         logging.info("Starting asynchronous operation to fetch and save activities data")
 
@@ -44,35 +44,38 @@ class ActivityAPIClient(BaseAPIClient):
             logging.info(f"Found {len(self.activities_ids_list)} activities in athlete data")
             logging.info("Starting asynchronous processing of activities")
 
-            # Create async function to make request and save the json file
-            async def process_activity(activity_id: int):
-                filename = f'activity_{activity_id}.json'
-                try:
-                    url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
-                    activity_data = await self.make_async_request(url, 'activities')
-                    if activity_data:
-                        await self.save_json_to_file_async(activity_data, filename, 'activities')
-                        return activity_data
-                    else:
-                        logging.warning(f"Unable to fetch data for Activity ID {activity_id}")
-                        return None
-                except Exception as e:
-                    logging.error(f"Error processing activity {activity_id}: {str(e)}")
-                    return None
+            # # Create async function to make request and save the json file
+            # async def process_activity(activity_id: int):
+            #     filename = f'activity_{activity_id}.json'
+            #     try:
+            #         url = f'https://www.strava.com/api/v3/activities/{activity_id}?include_all_efforts=true'
+            #         activity_data = await self.make_async_request(url, 'activities')
+            #         if activity_data:
+            #             await self.save_json_to_file_async(activity_data, filename, 'activities')
+            #             return activity_data
+            #         else:
+            #             logging.warning(f"Unable to fetch data for Activity ID {activity_id}")
+            #             return None
+            #     except Exception as e:
+            #         logging.error(f"Error processing activity {activity_id}: {str(e)}")
+            #         return None
 
-            # Pre-check which activities need to be fetched
-            activities_to_fetch = []
-            for activity_id in self.activities_ids_list:
-                filename = f'activity_{activity_id}.json'
-                if not await self.check_json_file_exists(filename, 'activities'):
-                    activities_to_fetch.append(activity_id)
+            # # Pre-check which activities need to be fetched
+            # activities_to_fetch = []
+            # for activity_id in self.activities_ids_list:
+            #     filename = f'activity_{activity_id}.json'
+            #     if not await self.check_json_file_exists(filename, 'activities'):
+            #         activities_to_fetch.append(activity_id)
 
-            if not activities_to_fetch:
-                logging.info("No new activities to fetch - all files exist")
-                return
+            # if not activities_to_fetch:
+            #     logging.info("No new activities to fetch - all files exist")
+            #     return
 
-            remaining_urls = []
-            total_requests = len(activities_to_fetch)
+            # remaining_urls = []
+            # total_requests = len(activities_to_fetch)
+
+            remaining_ids = self.activities_ids_list.copy()
+            total_requests = len(remaining_ids)
             rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
 
             logging.info(f"Rate limit status: {rate_limit_remaining} requests available out of {total_requests} needed")
@@ -80,8 +83,11 @@ class ActivityAPIClient(BaseAPIClient):
             while total_requests > rate_limit_remaining:
                 start_while_time = time.time()
                 logging.info(f"Rate limit reached: Processing {rate_limit_remaining} async requests (pending: {total_requests})")
-                current_urls = self.activities_ids_list[:rate_limit_remaining]
-                await asyncio.gather(*(process_activity(activity_id) for activity_id in current_urls))
+                current_urls = remaining_ids[:rate_limit_remaining]
+                await asyncio.gather(*(
+                    self.process_activity(activity_id, StravaEndpoints.ACTIVITIES)
+                    for activity_id in current_urls
+                ))
                 logging.info(f"Async processing completed in {time.time() - start_while_time:.2f} seconds")
 
                 # Calculate wait time until the next 15-minute interval
@@ -92,8 +98,8 @@ class ActivityAPIClient(BaseAPIClient):
                 logging.warning(f"Waiting for {wait_minutes} minutes until next rate limit window")
                 await asyncio.sleep(wait_seconds)  # Wait until the next interval
 
-                remaining_urls = self.activities_ids_list[rate_limit_remaining:]  # Get the remaining URLs
-                total_requests = len(remaining_urls)
+                remaining_ids = self.activities_ids_list[rate_limit_remaining:]  # Get the remaining URLs
+                total_requests = len(remaining_ids)
                 self.make_readratelimit_api_call()
                 rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
                 logging.info(f"New rate limit status: {rate_limit_remaining} requests available")
@@ -101,8 +107,11 @@ class ActivityAPIClient(BaseAPIClient):
 
             else:
                 start_else_time = time.time()
-                logging.info(f"Processing {len(remaining_urls if remaining_urls else self.activities_ids_list)} async requests and save data operations")
-                await asyncio.gather(*(process_activity(activity_id) for activity_id in self.activities_ids_list))
+                logging.info(f"Processing {len(remaining_ids if remaining_ids else self.activities_ids_list)} async requests and save data operations")
+                await asyncio.gather(*(
+                    self.process_activity(activity_id, StravaEndpoints.ACTIVITIES)
+                    for activity_id in remaining_ids
+                ))
                 logging.info(f"Async processing completed in {time.time() - start_else_time:.2f} seconds")
 
         elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
