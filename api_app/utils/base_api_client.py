@@ -1,4 +1,5 @@
 import aiohttp
+import asyncio
 import os
 import json
 import logging
@@ -52,7 +53,6 @@ class BaseAPIClient:
             logging.error("An error occurred: %s", err)
             return None
 
-
     async def make_async_request(self, url: str, module: str) -> Optional[Dict[str, Any]]:
         """
         Make a asynchronous GET HTTPS request to the specified URL and return the JSON response.
@@ -89,7 +89,6 @@ class BaseAPIClient:
             logging.error(f"Error fetching {module} data: {str(e)}")
             return None
 
-
     def make_readratelimit_api_call(self):
         try:
             logging.info(f"Sending request to get read rate limit usage")
@@ -111,6 +110,30 @@ class BaseAPIClient:
             logging.error("An error occurred: %s", err)
             return None
 
+    async def check_json_file_exists(self, filename: str, module: str) -> bool:
+        """
+        Check if a JSON file already exists in the specified module directory.
+
+        :param filename: The name of the file to check.
+        :param module: The module name for validation against allowed modules.
+        :return: True if the file exists, False otherwise.
+        :raises ValueError: If the module is not allowed.
+        """
+        if module and module not in self.ALLOWED_MODULES:
+            raise ValueError(f"Invalid module: {module}. Allowed modules are: {', '.join(self.ALLOWED_MODULES)}")
+
+        data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+        if module and module != 'athlete':
+            data_dir = os.path.join(data_dir, module)
+
+        file_path = os.path.join(data_dir, filename)
+        exists = os.path.exists(file_path)
+
+        if exists:
+            logging.info(f"File {filename} already exists in {module} directory")
+
+        return exists
+
     def save_json_to_file(self, data: dict, filename: str, module: str) -> None:
         """
         Save the given data to a JSON file.
@@ -128,13 +151,44 @@ class BaseAPIClient:
         data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
         if module and module != 'athlete':
             data_dir = os.path.join(data_dir, module)
+
         os.makedirs(data_dir, exist_ok=True)
         file_path = os.path.join(data_dir, filename)
 
         # Write the data to the JSON file
         with open(file_path, 'w') as json_file:
             json.dump(data, json_file, indent=4)
-        logging.info("Data saved to %s",  os.path.basename(file_path))
+        logging.info("Data saved to %s", os.path.basename(file_path))
+
+    async def save_json_to_file_async(self, data: dict, filename: str, module: str) -> None:
+        """
+        Save the given data to a JSON file.
+
+        :param data: The data to save.
+        :param filename: The name of the file to save the data to.
+        :param module: The module name for validation against allowed modules.
+        :raises ValueError: If the module is not allowed.
+        """
+        # Validate the module name if provided
+        if module and module not in self.ALLOWED_MODULES:
+            raise ValueError(f"Invalid module: {module}. Allowed modules are: {', '.join(self.ALLOWED_MODULES)}")
+
+        # Define the directory to save the data
+        data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
+        if module and module != 'athlete':
+            data_dir = os.path.join(data_dir, module)
+
+        os.makedirs(data_dir, exist_ok=True)
+        file_path = os.path.join(data_dir, filename)
+
+        async def _write_json():
+            def write():
+                with open(file_path, 'w') as json_file:
+                    json.dump(data, json_file, indent=4)
+            await asyncio.to_thread(write)
+
+        await _write_json()
+        logging.info(f"Data saved asynchronously to {os.path.basename(file_path)}")
 
 class RateLimitChecker:
     def __init__(self, rate_limit_usage: Optional[str]):
