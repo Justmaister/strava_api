@@ -22,8 +22,8 @@ class APIManager:
         ## Athlete
         self.athlete_client.fetch_athlete_data()
         self.athlete_client.save_athlete_data()
-        self.athlete_client.fetch_athlete_stats()
-        self.athlete_client.save_athlete_states_data()
+        # self.athlete_client.fetch_athlete_stats()
+        # self.athlete_client.save_athlete_states_data()
         # self.athlete_client.fetch_athlete_zone_data()
         # self.athlete_client.save_athlete_zones_data()
 

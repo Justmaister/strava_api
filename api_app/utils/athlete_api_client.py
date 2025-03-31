@@ -10,7 +10,7 @@ class AthleteAPIClient(BaseAPIClient):
 
         :return: The athlete data as a dictionary, or None if an error occurs.
         """
-        logging.info("Getting Athlete data")
+        logging.info("Fetching Athlete data")
         athlete_url = 'https://www.strava.com/api/v3/athlete'
         self.athlete_data = self.make_request(athlete_url, 'athlete')
         return self.athlete_data
@@ -21,7 +21,7 @@ class AthleteAPIClient(BaseAPIClient):
 
         :return: The athlete stats data as a dictionary, or None if an error occurs.
         """
-        logging.info("Getting Athlete Stats data")
+        logging.info("Fetching Athlete Stats data")
         athlete_id = self.athlete_data.get('id')
         athlete_stats_url = f'https://www.strava.com/api/v3/athletes/{athlete_id}/stats'
         self.athlete_states_data = self.make_request(athlete_stats_url, 'athlete')
@@ -33,7 +33,7 @@ class AthleteAPIClient(BaseAPIClient):
 
         :return: The athlete zone data as a dictionary, or None if an error occurs.
         """
-        logging.info("Getting Athlete Zones data")
+        logging.info("Fetching Athlete Zones data")
         athlete_zones_url = 'https://www.strava.com/api/v3/athlete/zones'
         self.athlete_zones_data = self.make_request(athlete_zones_url, 'athlete')
         return self.athlete_zones_data
