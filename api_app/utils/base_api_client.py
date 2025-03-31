@@ -3,6 +3,7 @@ import asyncio
 import os
 import json
 import logging
+import sys
 from typing import Dict, Any, Optional
 
 from .endpoint_config import EndpointConfig
@@ -10,7 +11,7 @@ from .endpoint_config import EndpointConfig
 import requests
 
 class BaseAPIClient:
-    ALLOWED_MODULES = ['athlete', 'activities', 'routes']  # Define allowed modules for saving data
+    ALLOWED_MODULES = ['athlete', 'activities', 'routes']
 
     def __init__(self, access_token: str):
         """
@@ -20,8 +21,8 @@ class BaseAPIClient:
         """
         self.access_token = access_token
         self.headers = {
-            'accept': 'application/json',  # Specify that we want JSON responses
-            'authorization': f'Bearer {self.access_token}'  # Set the authorization header
+            'accept': 'application/json',
+            'authorization': f'Bearer {self.access_token}'
         }
 
     def make_request(self, url: str, module: str) -> Optional[Dict[str, Any]]:
@@ -37,14 +38,14 @@ class BaseAPIClient:
 
         try:
             logging.info(f"Sending {module} request to %s", url)
-            response = requests.get(url, headers=self.headers)  # Send the GET request
+            response = requests.get(url, headers=self.headers)
             self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
 
             if response.status_code == 429:
-                raise ValueError("Rate limit exceeded: Too many requests")
+                raise RateLimitExceededError()
             if response.status_code == 200:
                 logging.info("Request successful")
-                return response.json()  # Return the JSON response
+                return response.json()
             else:
                 logging.warning(f"Failed to fetch {module} data")
                 logging.warning(f"Status: {response.status_code}")
@@ -82,7 +83,6 @@ class BaseAPIClient:
                     logging.info(f"Sending {module} request to %s", url)
                     self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
                     if response.status == 200:
-                        # self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
                         return await response.json()
                     else:
                         logging.warning(f"Failed to fetch {module} data")
@@ -96,12 +96,12 @@ class BaseAPIClient:
     def make_readratelimit_api_call(self):
         try:
             logging.info(f"Sending request to get read rate limit usage")
-            response = requests.get('https://www.strava.com/api/v3/athlete', headers=self.headers)  # Send the GET request
+            response = requests.get('https://www.strava.com/api/v3/athlete', headers=self.headers)
             self.rate_limit_usage = response.headers.get('x-readratelimit-usage')
 
             if response.status_code == 200:
                 logging.info("Request successful")
-                return response.json()  # Return the JSON response
+                return response.json()
             else:
                 logging.warning("Failed to fetch read rate limit usage data")
                 logging.warning(f"Status: {response.status_code}")
@@ -147,11 +147,9 @@ class BaseAPIClient:
         :param module: The module name for validation against allowed modules.
         :raises ValueError: If the module is not allowed.
         """
-        # Validate the module name if provided
         if module and module not in self.ALLOWED_MODULES:
             raise ValueError(f"Invalid module: {module}. Allowed modules are: {', '.join(self.ALLOWED_MODULES)}")
 
-        # Define the directory to save the data
         data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
         if module and module != 'athlete':
             data_dir = os.path.join(data_dir, module)
@@ -159,7 +157,6 @@ class BaseAPIClient:
         os.makedirs(data_dir, exist_ok=True)
         file_path = os.path.join(data_dir, filename)
 
-        # Write the data to the JSON file
         with open(file_path, 'w') as json_file:
             json.dump(data, json_file, indent=4)
         logging.info("Data saved to %s", os.path.basename(file_path))
@@ -173,11 +170,9 @@ class BaseAPIClient:
         :param module: The module name for validation against allowed modules.
         :raises ValueError: If the module is not allowed.
         """
-        # Validate the module name if provided
         if module and module not in self.ALLOWED_MODULES:
             raise ValueError(f"Invalid module: {module}. Allowed modules are: {', '.join(self.ALLOWED_MODULES)}")
 
-        # Define the directory to save the data
         data_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
         if module and module != 'athlete':
             data_dir = os.path.join(data_dir, module)
@@ -207,7 +202,6 @@ class BaseAPIClient:
             url = endpoint_config.url_template(activity_id)
             logging.info(f"Processing {endpoint_config.endpoint_name} for activity {activity_id}")
 
-            # Check if file exists before making request
             if await self.check_json_file_exists(filename, 'activities'):
                 logging.info(f"Skipping {endpoint_config.endpoint_name} for activity {activity_id}: File exists")
                 return None
@@ -247,3 +241,11 @@ class RateLimitChecker:
         :return: True if API calls can proceed, False otherwise.
         """
         return self.rate_limit_remaining
+
+class RateLimitExceededError(SystemExit):
+    """Exception raised when the API returns a 429 Too Many Requests status code.
+    Inherits from SystemExit to stop the application."""
+    def __init__(self, message="Rate limit exceeded: Too many requests. Application stopped."):
+        self.message = message
+        logging.critical(self.message)
+        super().__init__()

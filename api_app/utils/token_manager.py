@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 
 from .thinker_pop_up import ask_for_code
 
-# Load environment variables from .env file
 load_dotenv()
 
 TOKEN_FILE = "token_cache.json"
@@ -23,11 +22,11 @@ class TokenManager:
         Initialize the TokenManager and load environment variables.
         """
         logging.info("Loading Environment Variables")
-        self.client_id = os.getenv("CLIENT_ID") # Get the client ID from environment variables
-        self.client_secret = os.getenv("CLIENT_SECRET") # Get the client secret from environment variables
-        self.refresh_token: Optional[str] = None  # Initialize refresh token
-        self.access_token: Optional[str] = None  # Initialize access token
-        self.expires_at: int = 0  # Initialize token expiration time
+        self.client_id = os.getenv("CLIENT_ID")
+        self.client_secret = os.getenv("CLIENT_SECRET")
+        self.refresh_token: Optional[str] = None
+        self.access_token: Optional[str] = None
+        self.expires_at: int = 0
         self.load_token()
 
     def load_token(self) -> None:
@@ -78,7 +77,7 @@ class TokenManager:
             return token_data
 
         logging.info("The Tokens are not valid")
-        self.code = ask_for_code() # Prompt user for the authorization code
+        self.code = ask_for_code()
 
         if self.code:
             logging.info(f"Sending response to {self.API_URL}")
@@ -98,7 +97,7 @@ class TokenManager:
                 "expires_at": response_data.get("expires_at", "")
             }
 
-            self.save_token(token_data) # Save the new token data
+            self.save_token(token_data)
             return token_data
 
         else:

@@ -59,15 +59,15 @@ class ActivityAPIClient(BaseAPIClient):
                 ))
                 logging.info(f"Async processing completed in {time.time() - start_while_time:.2f} seconds")
 
-                # Calculate wait time until the next 15-minute interval
                 current_time = time.localtime()
-                wait_minutes = (15 - (current_time.tm_min % 15) + 1) % 15
+                # wait_minutes = (15 - (current_time.tm_min % 15) + 1) % 15
+                wait_minutes = (15 - (current_time.tm_min % 15)) % 15
                 wait_seconds = wait_minutes * 60 - current_time.tm_sec
 
                 logging.warning(f"Waiting for {wait_minutes} minutes until next rate limit window")
-                await asyncio.sleep(wait_seconds)  # Wait until the next interval
+                await asyncio.sleep(wait_seconds)
 
-                remaining_ids = self.activities_ids_list[rate_limit_remaining:]  # Get the remaining URLs
+                remaining_ids = self.activities_ids_list[rate_limit_remaining:]
                 total_requests = len(remaining_ids)
                 self.make_readratelimit_api_call()
                 rate_limit_remaining = RateLimitChecker(self.rate_limit_usage).get_rate_limit_remaining()
