@@ -7,16 +7,20 @@ from .base_api_client import BaseAPIClient, RateLimitChecker
 from .endpoint_config import StravaEndpoints
 
 class ActivityAPIClient(BaseAPIClient):
-    def fetch_athlete_activities_data(self, page: int = 3, per_page: int = 200) -> Optional[Dict[str, Any]]:
+    def fetch_athlete_activities_data(self, before: Optional[int] = None, after: Optional[int] = None, page: int = 3, per_page: int = 200) -> Optional[Dict[str, Any]]:
         """
         Fetch athlete Activities data.
 
+        :param before: An epoch timestamp to use for filtering activities that have taken place before a certain time.
+        :param after: An epoch timestamp to use for filtering activities that have taken place after a certain time.
         :param page: The page number for pagination.
         :param per_page: The number of activities per page.
         :return: The athlete activities data as a dictionary, or None if an error occurs.
         """
         logging.info("Fetching athlete activities data")
         athlete_activities_url = 'https://www.strava.com/api/v3/athlete/activities'
+        self.headers['before'] = str(before)
+        self.headers['after'] = str(after)
         self.headers['page'] = str(page)
         self.headers['per_page'] = str(per_page)
         self.athlete_activities_data = self.make_request(athlete_activities_url, 'activities')
@@ -52,10 +56,10 @@ class ActivityAPIClient(BaseAPIClient):
             while total_requests > rate_limit_remaining:
                 start_while_time = time.time()
                 logging.info(f"Rate limit reached: Processing {rate_limit_remaining} async requests (pending: {total_requests - rate_limit_remaining})")
-                current_urls = remaining_ids[:rate_limit_remaining]
+                current_ids = remaining_ids[:rate_limit_remaining]
                 await asyncio.gather(*(
                     self.process_activity(activity_id, StravaEndpoints.ACTIVITIES)
-                    for activity_id in current_urls
+                    for activity_id in current_ids
                 ))
                 logging.info(f"Async processing completed in {time.time() - start_while_time:.2f} seconds")
 

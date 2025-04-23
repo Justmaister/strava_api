@@ -3,3 +3,5 @@ data/
 *.ipynb
 __pycache__/
 *.pyc
+.venv/
+*_old.py
