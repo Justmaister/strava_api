@@ -115,7 +115,8 @@ class ThinkerPopup(tk.Toplevel):
             self.main_frame,
             text=text,
             variable=var,
-            style='Custom.TCheckbutton'
+            style='Custom.TCheckbutton',
+            command=lambda: self._update_checkbox_state(name, var)
         )
         if row is not None:
             checkbox.grid(row=row, column=0, sticky="w", pady=self.theme['padding'])
@@ -123,6 +124,7 @@ class ThinkerPopup(tk.Toplevel):
             checkbox.pack(pady=self.theme['padding'])
 
         self.widgets[name] = (checkbox, var)
+        self.results[name] = False
 
     def add_button(self, text: str, command: Callable, row: int = None) -> None:
         """Add a button with custom command."""
@@ -140,9 +142,7 @@ class ThinkerPopup(tk.Toplevel):
     def get_results(self) -> Dict[str, Any]:
         """Collect all input values."""
         for name, widget in self.widgets.items():
-            if isinstance(widget, ttk.Entry):
-                self.results[name] = widget.get()
-            elif isinstance(widget, tuple):
+            if isinstance(widget, tuple):  # Checkbox
                 self.results[name] = widget[1].get()
         return self.results
 
@@ -155,6 +155,10 @@ class ThinkerPopup(tk.Toplevel):
         """Restore placeholder text if field is empty."""
         if entry.get() == "":
             entry.insert(0, placeholder)
+
+    def _update_checkbox_state(self, name: str, var: tk.BooleanVar) -> None:
+        """Update the checkbox state in the results dictionary."""
+        self.results[name] = var.get()
 
 def create_strava_code_popup() -> Optional[str]:
     """
@@ -189,6 +193,7 @@ def create_strava_code_popup() -> Optional[str]:
     popup.add_button("Submit", on_submit)
 
     root.wait_window(popup)
+    root.destroy()
     return result
 
 def create_strava_data_sections_popup() -> Dict[str, Any]:
@@ -209,13 +214,47 @@ def create_strava_data_sections_popup() -> Dict[str, Any]:
     )
 
     popup.add_label("Select the sections to Download:", row=0)
+
     popup.add_checkbutton("download_athlete_section", "Download Athlete Section", row=1)
-    popup.add_checkbutton("download_activities_section", "Download Athlete Section", row=2)
-    popup.add_checkbutton("download_segment_section", "Download Athlete Section", row=3)
-    popup.add_checkbutton("download_routes_section", "Download Athlete Section", row=4)
-    popup.add_checkbutton("download_club_section", "Download Athlete Section", row=5)
+    popup.add_checkbutton("download_activities_section", "Download Activities Section", row=2)
+    popup.add_checkbutton("download_segment_section", "Download Segment Section", row=3)
+    popup.add_checkbutton("download_routes_section", "Download Routes Section", row=4)
+    popup.add_checkbutton("download_club_section", "Download Club Section", row=5)
+
     popup.add_button("Save Settings", lambda: popup.destroy(), row=6)
 
     root.wait_window(popup)
-    return popup.get_results()
+    results = popup.get_results()
+    root.destroy()
+    return results
 
+def create_strava_activities_sections_popup() -> Dict[str, Any]:
+    """
+    Create a popup for Strava activities data download configuration.
+    Allows users to select which types of Strava activities data they want to download.
+
+    Returns:
+        Dict[str, Any]: Dictionary containing the selected data types and rate limit
+    """
+    root = tk.Tk()
+    root.withdraw()
+
+    popup = ThinkerPopup(
+        root,
+        title="Strava Activities Download Settings",
+        geometry="500x320"
+    )
+
+    popup.add_label("Select the Activities to Download:", row=0)
+    popup.add_checkbutton("download_activities", "Download Activities", row=1)
+    popup.add_checkbutton("download_activities_laps", "Download Activities Laps", row=2)
+    popup.add_checkbutton("download_activities_zones", "Download Activities Zones (Payment)", row=3)
+    popup.add_checkbutton("download_activities_comments", "Download Activities Comments", row=4)
+    popup.add_checkbutton("download_activities_kudos", "Download Activities Kudos", row=5)
+
+    popup.add_button("Save Settings", lambda: popup.destroy(), row=6)
+
+    root.wait_window(popup)
+    results = popup.get_results()
+    root.destroy()
+    return results

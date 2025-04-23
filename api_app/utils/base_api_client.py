@@ -85,7 +85,7 @@ class BaseAPIClient:
                         return await response.json()
                     else:
                         logging.warning(f"Failed to fetch {module} data")
-                        logging.warning(f"Status: {response.status_code}")
+                        logging.warning(f"Status: {response.status}")
                         logging.warning(f"Reason: {response.reason}")
                         return None
         except Exception as e:
@@ -188,7 +188,7 @@ class BaseAPIClient:
         await _write_json()
         logging.info(f"Data saved asynchronously to {os.path.basename(file_path)}")
 
-    async def process_activity(self, activity_id: int, endpoint_config: EndpointConfig):
+    async def process_endpoint(self, activity_id: int, endpoint_config: EndpointConfig):
         """
         Generic method to process an activity with a specific endpoint configuration.
 
@@ -197,17 +197,18 @@ class BaseAPIClient:
         :return: The processed activity data or None if an error occurs
         """
         filename = endpoint_config.filename_template(activity_id)
+        section = endpoint_config.section
         try:
             url = endpoint_config.url_template(activity_id)
             logging.info(f"Processing {endpoint_config.endpoint_name} for activity {activity_id}")
 
-            if await self.check_json_file_exists(filename, 'activities'):
+            if await self.check_json_file_exists(filename, section):
                 logging.info(f"Skipping {endpoint_config.endpoint_name} for activity {activity_id}: File exists")
                 return None
 
-            activity_data = await self.make_async_request(url, 'activities')
+            activity_data = await self.make_async_request(url, section)
             if activity_data:
-                await self.save_json_to_file_async(activity_data, filename, 'activities')
+                await self.save_json_to_file_async(activity_data, filename, section)
                 return activity_data
             else:
                 logging.warning(f"Unable to fetch {endpoint_config.endpoint_name} data for Activity ID {activity_id}")

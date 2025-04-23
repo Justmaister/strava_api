@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from .thinker_pop_up import create_strava_data_sections_popup
+from .thinker_pop_up import create_strava_data_sections_popup, create_strava_activities_sections_popup
 from .athlete_api_client import AthleteAPIClient
 from .activities_api_client import ActivityAPIClient
 from .routes_api_client import RoutesAPIClient
@@ -20,7 +20,6 @@ class APIManager:
         self.routes_client = RoutesAPIClient(access_token)
 
     def process_activities(self) -> None:
-
         strava_data_section = create_strava_data_sections_popup()
 
         ## Athlete
@@ -29,19 +28,26 @@ class APIManager:
         if strava_data_section.get("download_athlete_section"):
             self.athlete_client.fetch_athlete_stats()
             self.athlete_client.save_athlete_states_data()
-            self.athlete_client.fetch_athlete_zone_data()
-            self.athlete_client.save_athlete_zones_data()
+            # self.athlete_client.fetch_athlete_zone_data()
+            # self.athlete_client.save_athlete_zones_data()
 
         ## Activities
         if strava_data_section.get("download_activities_section"):
+            strava_athletes_popup = create_strava_activities_sections_popup()
+            # print(strava_athletes_popup)
             self.activity_client.fetch_athlete_activities_data()
             self.activity_client.save_athlete_activities_data()
 
-
-            asyncio.run(self.activity_client.fetch_and_save_activities_data_async())
-            # asyncio.run(self.activity_client.fetch_and_save_activities_laps_data_async())
-            # asyncio.run(self.activity_client.fetch_and_save_activities_zones_data_async())
-
+            if strava_athletes_popup.get("download_activities"):
+                asyncio.run(self.activity_client.fetch_and_save_activities_data_async('activities'))
+            if strava_athletes_popup.get("download_activities_laps"):
+                asyncio.run(self.activity_client.fetch_and_save_activities_data_async('laps'))
+            if strava_athletes_popup.get("download_activities_zones"):
+                asyncio.run(self.activity_client.fetch_and_save_activities_data_async('zones'))
+            if strava_athletes_popup.get("download_activities_comments"):
+                asyncio.run(self.activity_client.fetch_and_save_activities_data_async('comments'))
+            if strava_athletes_popup.get("download_activities_kudos"):
+                asyncio.run(self.activity_client.fetch_and_save_activities_data_async('kudos'))
         ##Routes
         # self.routes_client.fetch_routes_data()
         # self.routes_client.save_routes_data()
