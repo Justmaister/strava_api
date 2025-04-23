@@ -3,7 +3,6 @@ import asyncio
 import os
 import json
 import logging
-import sys
 from typing import Dict, Any, Optional
 
 from .endpoint_config import EndpointConfig
