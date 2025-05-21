@@ -44,3 +44,31 @@ class StravaEndpoints:
         endpoint_name="kudos",
         section="activities"
     )
+
+    ROUTES = EndpointConfig(
+        url_template=lambda rid: f"https://www.strava.com/api/v3/routes/{rid}",
+        filename_template=lambda rid: f"route_{rid}.json",
+        endpoint_name="route",
+        section="routes"
+    )
+
+    CLUBS = EndpointConfig(
+        url_template=lambda cid: f"https://www.strava.com/api/v3/clubs/{cid}",
+        filename_template=lambda cid: f"club_{cid}.json",
+        endpoint_name="club",
+        section="clubs"
+    )
+
+    CLUB_MEMBERS = EndpointConfig(
+        url_template=lambda cid: f"https://www.strava.com/api/v3/clubs/{cid}/members",
+        filename_template=lambda cid: f"club_{cid}_members.json",
+        endpoint_name="club members",
+        section="clubs"
+    )
+
+    CLUB_ACTIVITIES = EndpointConfig(
+        url_template=lambda cid: f"https://www.strava.com/api/v3/clubs/{cid}/activities",
+        filename_template=lambda cid: f"club_{cid}_activities.json",
+        endpoint_name="club activities",
+        section="clubs"
+    )

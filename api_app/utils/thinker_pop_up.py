@@ -258,3 +258,32 @@ def create_strava_activities_sections_popup() -> Dict[str, Any]:
     results = popup.get_results()
     root.destroy()
     return results
+
+def create_strava_clubs_sections_popup() -> Dict[str, Any]:
+    """
+    Create a popup for Strava clubs data download configuration.
+    Allows users to select which types of Strava clubs data they want to download.
+
+    Returns:
+        Dict[str, Any]: Dictionary containing the selected data types
+    """
+    root = tk.Tk()
+    root.withdraw()
+
+    popup = ThinkerPopup(
+        root,
+        title="Strava Clubs Download Settings",
+        geometry="500x250"
+    )
+
+    popup.add_label("Select the Clubs Data to Download:", row=0)
+    popup.add_checkbutton("download_clubs", "Download Clubs Information", row=1)
+    popup.add_checkbutton("download_club_members", "Download Club Members", row=2)
+    popup.add_checkbutton("download_club_activities", "Download Club Activities", row=3)
+
+    popup.add_button("Save Settings", lambda: popup.destroy(), row=4)
+
+    root.wait_window(popup)
+    results = popup.get_results()
+    root.destroy()
+    return results

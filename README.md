@@ -1,47 +1,95 @@
 # Strava API Project
 
+This project provides a Python-based interface to interact with the Strava API, allowing you to fetch and analyze your Strava activity data.
 
-# Steps
+## Features
 
-## 1- Create a Strava APP and get Credentials
+- Authentication with Strava API
+- Token management (access and refresh tokens)
+- Activity data retrieval
+- Asynchronous API requests
+- Interactive progress tracking
+- Configurable endpoints
+- Package management with pyproject.toml
 
-Go the the link https://www.strava.com/settings/api and Create an App and set Authorization Callback Domain to `developers.strava.com` and Website  to `https://www.strava.testapp.com`
+## Project Structure
 
+strava_api/
+├── api_app/ # Main application code
+│ ├── data/ # Data storage
+│ ├── utils/ # Utility functions
+│ └── strava_api.ipynb # Jupyter notebook for API interaction
+├── resources/ # Additional resources
+└── token_cache.json # Token storage
 
-## 2- Authorize Credentials in the Browser
+## Getting Started
 
-Visit web page replacing the client_id to authorize the new Strava App to read data from Strava. You can find the client_id in `https://www.strava.com/settings/api`
+1. Clone this repository
+2. Create a virtual environment:
+   ```bash
+   uv venv
+   source .venv/Scripts/activate # In Windows
+   ```
+3. Install dependencies:
+   ```bash
+   uv pip install -e .
+   ```
+4. To deactivate the virtual environment:
+   ```bash
+   deactivate
+   ```
 
-http://www.strava.com/oauth/authorize?client_id=[REPLACE_WITH_YOUR_CLIENT_ID]&response_type=code&redirect_uri=http://localhost/exchange_token&approval_prompt=force&scope=activity:read_all
+## Usage
 
-> **Warning**
-> Take into acount that the last part of the URL `scope=...` will set the credentials for the APP to read the data I recoomend to use `scope=activity:read_all` more information about each API Request permissions on the [Strava developers APP](https://developers.strava.com/playground/)
+1. Follow the API setup instructions in [api_setup.md](api_setup.md)
+2. Run the Jupyter notebook:
+   ```bash
+   python -m api_app
+   ```
 
+## Project Features
 
-## 3- Get Strava Access Code
+### Package Management
+The project uses `pyproject.toml` for modern Python packaging:
+```toml
+[project]
+name = "strava_api"
+version = "0.1.0"
+description = "Strava API Integration"
+dependencies = [
+    "requests",
+    "aiohttp",
+    "pandas",
+    "jupyter"
+]
+```
 
-Once click Authorize it redirects you to a new URL to a URL like this one `http://localhost/exchange_token?state=&code=[code]&scope=read,activity:read_all` where we need to copy the `code` and save.
+### API Configuration
+The `EndpointConfig` class manages API endpoints and authentication:
+```python
+from api_app.utils.endpoint_config import EndpointConfig
 
+config = EndpointConfig(
+    base_url="https://www.strava.com/api/v3",
+    endpoints={
+        "activities": "/athlete/activities",
+        "athlete": "/athlete"
+    }
+)
+```
 
-## 4- Get Strava Access and Refresh Tokens
+### Asynchronous Requests
+The project supports async API calls for better performance:
+```python
+from api_app.utils.async_client import AsyncStravaClient
 
-We want to make an API request to get the **actual access token information** to the following endpoint `https://www.strava.com/oauth/token`
+async with AsyncStravaClient() as client:
+    activities = await client.get_activities()
+```
 
-You’ll want to provide the following as query parameters:
-- `client_id`: you can get this from your Strava account
-- `client_secret`: you can get this from your Strava account
-- `code`: you should have received this in the last step from the URL
-- `grant_type`: set this to `authorization_code`
+### Custom API Call Selection
+Interactive API call selection using `thinker` for a better user experience:
+```python
+from api_app.utils.thinker import ThinkerAPI
+from api_app.utils.endpoint_config import EndpointConfig
 
-The complete URL look like this:
-`https://www.strava.com/oauth/token?client_id=xxxxxxx&client_secret=xxxxxxxxxxxxxxxxxxxxxx&code=1c49xxxxxxxxxxxxxxxxxxxxxxx&grant_type=authorization_code`
-
-The important fields to pay attention to here are `expires_at`, `refresh_token`, and `access_token`.
-
-Strava’s `access_token` will expire at the `expires_at` time which is a **Unix Epoch timestamp**. We’ll talk about refreshing later, but for now let’s get some Strava data.
-
-
-
-
-# Links
-- Strava Developer Playground [Link](https://developers.strava.com/playground/)

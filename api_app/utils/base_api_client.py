@@ -10,7 +10,7 @@ from .endpoint_config import EndpointConfig
 import requests
 
 class BaseAPIClient:
-    ALLOWED_MODULES = ['athlete', 'activities', 'routes']
+    ALLOWED_MODULES = ['athlete', 'activities', 'routes', 'clubs']
 
     def __init__(self, access_token: str):
         """
