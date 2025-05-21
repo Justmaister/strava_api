@@ -15,12 +15,12 @@ This project provides a Python-based interface to interact with the Strava API, 
 ## Project Structure
 
 strava_api/
-├── api_app/ # Main application code
-│ ├── data/ # Data storage
-│ ├── utils/ # Utility functions
-│ └── strava_api.ipynb # Jupyter notebook for API interaction
-├── resources/ # Additional resources
-└── token_cache.json # Token storage
+├── api_app/
+│   ├── data/
+│   ├── utils/
+│   └── strava_api.ipynb
+├── resources/
+└── token_cache.json
 
 ## Getting Started
 

@@ -60,3 +60,4 @@ The response will include:
 
 - [Strava Developer Playground](https://developers.strava.com/playground/)
 - [Strava API Documentation](https://developers.strava.com/docs/)
+- [Srava aPI Reference](https://developers.strava.com/docs/)
