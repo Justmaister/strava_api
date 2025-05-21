@@ -8,7 +8,7 @@ from typing import Optional
 import requests
 from dotenv import load_dotenv
 
-from .thinker_pop_up import ask_for_code
+from .thinker_pop_up import create_strava_code_popup
 
 load_dotenv()
 
@@ -77,7 +77,7 @@ class TokenManager:
             return token_data
 
         logging.info("The Tokens are not valid")
-        self.code = ask_for_code()
+        self.code = create_strava_code_popup()
 
         if self.code:
             logging.info(f"Sending response to {self.API_URL}")

@@ -35,17 +35,19 @@ class ActivityAPIClient(BaseAPIClient):
         else:
             logging.warning("Unable to save athlete activities data: No data available")
 
-    async def fetch_and_save_activities_data_async(self) -> None:
+    async def fetch_and_save_activities_data_async(self, data_type: str) -> None:
         """
         Fetch and save Activities data asynchronously.
+
+        :param data_type: Type of activities data to fetch ('activities', 'laps', 'zones', 'comments' or 'kudos')
         """
         start_time = time.time()
-        logging.info("Starting asynchronous operation to fetch and save activities data")
+        logging.info(f"Starting asynchronous operation to fetch and save activities {data_type} data")
 
         if self.athlete_activities_data:
             self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
             logging.info(f"Found {len(self.activities_ids_list)} activities in athlete data")
-            logging.info("Starting asynchronous processing of activities")
+            logging.info(f"Starting asynchronous processing of activities {data_type}")
 
             remaining_ids = self.activities_ids_list.copy()
             total_requests = len(remaining_ids)
@@ -53,18 +55,26 @@ class ActivityAPIClient(BaseAPIClient):
 
             logging.info(f"Rate limit status: {rate_limit_remaining} requests available out of {total_requests} needed")
 
+            # Determine the appropriate endpoint based on data_type
+            endpoint = {
+                'activities': StravaEndpoints.ACTIVITIES,
+                'laps': StravaEndpoints.ACTIVITIES_LAPS,
+                'zones': StravaEndpoints.ACTIVITIES_ZONES,
+                'comments': StravaEndpoints.ACTIVITIES_COMMENTS,
+                'kudos': StravaEndpoints.ACTIVITIES_KUDOS
+            }[data_type]
+
             while total_requests > rate_limit_remaining:
                 start_while_time = time.time()
                 logging.info(f"Rate limit reached: Processing {rate_limit_remaining} async requests (pending: {total_requests - rate_limit_remaining})")
                 current_ids = remaining_ids[:rate_limit_remaining]
                 await asyncio.gather(*(
-                    self.process_activity(activity_id, StravaEndpoints.ACTIVITIES)
+                    self.process_endpoint(activity_id, endpoint)
                     for activity_id in current_ids
                 ))
                 logging.info(f"Async processing completed in {time.time() - start_while_time:.2f} seconds")
 
                 current_time = time.localtime()
-                # wait_minutes = (15 - (current_time.tm_min % 15) + 1) % 15
                 wait_minutes = (15 - (current_time.tm_min % 15)) % 15
                 wait_seconds = wait_minutes * 60 - current_time.tm_sec
 
@@ -82,68 +92,14 @@ class ActivityAPIClient(BaseAPIClient):
                 start_else_time = time.time()
                 logging.info(f"Processing {len(remaining_ids if remaining_ids else self.activities_ids_list)} async requests and save data operations")
                 await asyncio.gather(*(
-                    self.process_activity(activity_id, StravaEndpoints.ACTIVITIES)
+                    self.process_endpoint(activity_id, endpoint)
                     for activity_id in remaining_ids
                 ))
                 logging.info(f"Async processing completed in {time.time() - start_else_time:.2f} seconds")
 
         elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
-            logging.warning("No activities data to process: Empty dataset received")
+            logging.warning(f"No activities {data_type} data to process: Empty dataset received")
         else:
-            logging.warning("Unable to process activities: No data available")
+            logging.warning(f"Unable to process activities {data_type}: No data available")
 
         logging.info(f"Total async processing time: {time.time() - start_time:.2f} seconds")
-
-    async def fetch_and_save_activities_laps_data_async(self) -> None:
-        """
-        Fetch and save Activities Laps data asynchronously.
-        """
-
-        start_time = time.time()
-
-        logging.info("Fetching Activities Laps data asynchronously")
-        if self.athlete_activities_data:
-            self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
-
-            urls = [f'https://www.strava.com/api/v3/activities/{activity_id}/laps'
-                   for activity_id in self.activities_ids_list]
-            activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in urls))
-
-            for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
-                if activity_data:
-                    self.save_json_to_file(activity_data, f'activity_{activity_id}_laps.json', 'activities')
-                else:
-                    logging.warning(f"No Laps data found for Activity ID {activity_id}")
-        elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
-            logging.warning("Athletes Activities data is empty. Skipping save operation.")
-        else:
-            logging.warning("Athletes Activities Laps data not found")
-
-        logging.info(f"Async sync code cost {time.time() - start_time:.2f} seconds")
-
-    async def fetch_and_save_activities_zones_data_async(self) -> None:
-        """
-        Fetch and save Activities Zones data asynchronously.
-        """
-
-        start_time = time.time()
-
-        logging.info("Fetching Activities Zones data asynchronously")
-        if self.athlete_activities_data:
-            self.activities_ids_list = [activity['id'] for activity in self.athlete_activities_data]
-
-            urls = [f'https://www.strava.com/api/v3/activities/{activity_id}/zones'
-                   for activity_id in self.activities_ids_list]
-            activities_data = await asyncio.gather(*(self.make_async_request(url, 'activities') for url in urls))
-
-            for activity_id, activity_data in zip(self.activities_ids_list, activities_data):
-                if activity_data:
-                    self.save_json_to_file(activity_data, f'activity_{activity_id}_zones.json', 'activities')
-                else:
-                    logging.warning(f"No Zones data found for Activity ID {activity_id}")
-        elif isinstance(self.athlete_activities_data, (list, dict)) and not self.athlete_activities_data:
-            logging.warning("Athletes Activities data is empty. Skipping save operation.")
-        else:
-            logging.warning("Athletes Activities Zones data not found")
-
-        logging.info(f"Async sync code cost {time.time() - start_time:.2f} seconds")
