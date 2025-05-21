@@ -1,10 +1,11 @@
 import asyncio
 import logging
 
-from .thinker_pop_up import create_strava_data_sections_popup, create_strava_activities_sections_popup
+from .thinker_pop_up import create_strava_data_sections_popup, create_strava_activities_sections_popup, create_strava_clubs_sections_popup
 from .athlete_api_client import AthleteAPIClient
 from .activities_api_client import ActivityAPIClient
 from .routes_api_client import RoutesAPIClient
+from .clubs_api_client import ClubsAPIClient
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -18,6 +19,7 @@ class APIManager:
         self.athlete_client = AthleteAPIClient(access_token)
         self.activity_client = ActivityAPIClient(access_token)
         self.routes_client = RoutesAPIClient(access_token)
+        self.clubs_client = ClubsAPIClient(access_token)
 
     def process_activities(self) -> None:
         strava_data_section = create_strava_data_sections_popup()
@@ -48,14 +50,21 @@ class APIManager:
             if strava_athletes_popup.get("download_activities_kudos"):
                 asyncio.run(self.activity_client.fetch_and_save_activities_data_async('kudos'))
 
-        ## Section
-        # if strava_data_section.get("download_segment_section"):
-
         ## Routes
         if strava_data_section.get("download_routes_section"):
             self.routes_client.fetch_routes_data()
             self.routes_client.save_routes_data()
             asyncio.run(self.routes_client.fetch_and_save_routes_data_async())
-            
+
         ## Club
-        # if strava_data_section.get("download_club_section"):
+        if strava_data_section.get("download_club_section"):
+            strava_clubs_popup = create_strava_clubs_sections_popup()
+            self.clubs_client.fetch_clubs_data()
+            self.clubs_client.save_clubs_data()
+
+            if strava_clubs_popup.get("download_clubs"):
+                asyncio.run(self.clubs_client.fetch_and_save_clubs_data_async('clubs'))
+            if strava_clubs_popup.get("download_club_members"):
+                asyncio.run(self.clubs_client.fetch_and_save_clubs_data_async('members'))
+            if strava_clubs_popup.get("download_club_activities"):
+                asyncio.run(self.clubs_client.fetch_and_save_clubs_data_async('activities'))
