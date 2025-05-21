@@ -34,7 +34,6 @@ class APIManager:
         ## Activities
         if strava_data_section.get("download_activities_section"):
             strava_athletes_popup = create_strava_activities_sections_popup()
-            # print(strava_athletes_popup)
             self.activity_client.fetch_athlete_activities_data()
             self.activity_client.save_athlete_activities_data()
 
@@ -48,6 +47,15 @@ class APIManager:
                 asyncio.run(self.activity_client.fetch_and_save_activities_data_async('comments'))
             if strava_athletes_popup.get("download_activities_kudos"):
                 asyncio.run(self.activity_client.fetch_and_save_activities_data_async('kudos'))
-        ##Routes
-        # self.routes_client.fetch_routes_data()
-        # self.routes_client.save_routes_data()
+
+        ## Section
+        # if strava_data_section.get("download_segment_section"):
+
+        ## Routes
+        if strava_data_section.get("download_routes_section"):
+            self.routes_client.fetch_routes_data()
+            self.routes_client.save_routes_data()
+            asyncio.run(self.routes_client.fetch_and_save_routes_data_async())
+            
+        ## Club
+        # if strava_data_section.get("download_club_section"):

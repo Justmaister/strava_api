@@ -44,3 +44,10 @@ class StravaEndpoints:
         endpoint_name="kudos",
         section="activities"
     )
+
+    ROUTES = EndpointConfig(
+        url_template=lambda rid: f"https://www.strava.com/api/v3/routes/{rid}",
+        filename_template=lambda rid: f"route_{rid}.json",
+        endpoint_name="route",
+        section="routes"
+    )

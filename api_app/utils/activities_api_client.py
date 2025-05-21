@@ -55,7 +55,6 @@ class ActivityAPIClient(BaseAPIClient):
 
             logging.info(f"Rate limit status: {rate_limit_remaining} requests available out of {total_requests} needed")
 
-            # Determine the appropriate endpoint based on data_type
             endpoint = {
                 'activities': StravaEndpoints.ACTIVITIES,
                 'laps': StravaEndpoints.ACTIVITIES_LAPS,
