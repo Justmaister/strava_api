@@ -14,6 +14,7 @@ This project provides a Python-based interface to interact with the Strava API, 
 
 ## Project Structure
 
+```
 strava_api/
 ├── api_app/
 │   ├── data/
@@ -21,6 +22,7 @@ strava_api/
 │   └── strava_api.ipynb
 ├── resources/
 └── token_cache.json
+```
 
 ## Getting Started
 
