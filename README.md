@@ -61,7 +61,6 @@ description = "Strava API Integration"
 dependencies = [
     "requests",
     "aiohttp",
-    "pandas",
     "jupyter"
 ]
 ```
