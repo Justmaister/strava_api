@@ -40,6 +40,11 @@ strava_api/
    ```bash
    deactivate
    ```
+5. Create a .env file 
+    ```
+    CLIENT_ID=XXXXXX
+    CLIENT_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    ```
 
 ## Usage
 

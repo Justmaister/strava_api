@@ -1,22 +1,47 @@
 import os
+import requests
+import webbrowser
 import sys
 import time
 import logging
 import json
+import threading
 from typing import Optional
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlparse, parse_qs
 
-import requests
 from dotenv import load_dotenv
-
-from .thinker_pop_up import create_strava_code_popup
 
 load_dotenv()
 
+AUTH_CODE = None
+REDIRECT_PORT = 8000
+SERVER_HOST = 'localhost'
+API_URL = "https://www.strava.com/oauth/token"
 TOKEN_FILE = "token_cache.json"
 
-class TokenManager:
-    API_URL = "https://www.strava.com/oauth/token"
 
+class StravaAuthHandler(BaseHTTPRequestHandler):
+    """A simple handler to capture the authorization code from the redirect URL."""
+    def do_GET(self):
+        global AUTH_CODE
+        query_components = parse_qs(urlparse(self.path).query)
+
+        if 'code' in query_components:
+            AUTH_CODE = query_components['code'][0]
+
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b"<html><body><h1>Authorization successful!</h1><p>You can now close or minimise this browser window and return to the application.</p></body></html>")
+
+            threading.Thread(target=self.server.shutdown).start()
+        else:
+            self.send_response(400)
+            self.end_headers()
+            self.wfile.write(b"Error: Code not found in redirect.")
+
+class TokenManager():
     def __init__(self):
         """
         Initialize the TokenManager and load environment variables.
@@ -77,31 +102,44 @@ class TokenManager:
             return token_data
 
         logging.info("The Tokens are not valid")
-        self.code = create_strava_code_popup()
 
-        if self.code:
-            logging.info(f"Sending response to {self.API_URL}")
-            payload = {
-                "client_id": self.client_id,
-                "client_secret": self.client_secret,
-                "code": self.code,
-                "grant_type": "authorization_code"
-            }
+        client_id = self.client_id
+        client_secret = self.client_secret
+        global REDIRECT_PORT
 
-            response = requests.post(self.API_URL, data=payload)
-            response.raise_for_status()
-            response_data = response.json()
-            token_data = {
-                "access_token": response_data.get("access_token", ""),
-                "refresh_token": response_data.get("refresh_token", ""),
-                "expires_at": response_data.get("expires_at", "")
-            }
+        redirect_uri = f'http://{SERVER_HOST}:{REDIRECT_PORT}'
 
-            self.save_token(token_data)
-            return token_data
+        request_url = (
+            f'http://www.strava.com/oauth/authorize?client_id={client_id}'
+            f'&response_type=code&redirect_uri={redirect_uri}'
+            f'&approval_prompt=force'
+            f'&scope=profile:read_all,activity:read_all'
+        )
 
-        else:
-            logging.info("User did not enter any Strava Code. The application is shuting down. \n "
-                         "For more details, visit: https://developers.strava.com/docs/getting-started/#oauth")
-            sys.exit()
+        logging.info("Opening browser for Strava authorization...")
+        webbrowser.open(request_url)
+
+        httpd = HTTPServer((SERVER_HOST, REDIRECT_PORT), StravaAuthHandler)
+        logging.info(f"Waiting for Strava authorization on {redirect_uri}...")
+
+        httpd.serve_forever()
+        logging.info("Server shut down. Continuing script...")
+
+        code = AUTH_CODE
+
+        if not code:
+            logging.info("Authorization failed or code was not received.")
+            return None
+
+        token = requests.post(
+            url='https://www.strava.com/api/v3/oauth/token',
+            data={'client_id': client_id,
+                'client_secret': client_secret,
+                'code': code,
+                'grant_type': 'authorization_code'}
+        )
+        token_json = token.json()
+
+        self.save_token(token_json)
+        return token_json
 

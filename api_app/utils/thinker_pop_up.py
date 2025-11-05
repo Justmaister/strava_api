@@ -209,7 +209,7 @@ def create_strava_data_sections_popup() -> Dict[str, Any]:
 
     popup = ThinkerPopup(
         root,
-        title="Strava Data Download Settings",
+        title="Strava API section",
         geometry="500x320"
     )
 

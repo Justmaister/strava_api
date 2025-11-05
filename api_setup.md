@@ -2,7 +2,9 @@
 
 This guide will walk you through the process of setting up your Strava API credentials and obtaining the necessary tokens for the application.
 
-## 1. Create a Strava APP and get Credentials
+Point 2 to 4 are authomated in the Code of this Strava API
+
+## 1. Create a Strava APP and get Credentials (Must Create)
 
 1. Go to [Strava API Settings](https://www.strava.com/settings/api)
 2. Create a new application
@@ -60,4 +62,4 @@ The response will include:
 
 - [Strava Developer Playground](https://developers.strava.com/playground/)
 - [Strava API Documentation](https://developers.strava.com/docs/)
-- [Srava aPI Reference](https://developers.strava.com/docs/)
+- [Srava API Authentication](https://developers.strava.com/docs/authentication/)
