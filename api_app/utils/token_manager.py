@@ -33,7 +33,7 @@ class StravaAuthHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            self.wfile.write(b"<html><body><h1>Authorization successful!</h1><p>You can now close or minimise this browser window and return to the application.</p></body></html>")
+            self.wfile.write(b"<html><body><h1>Justmaister Strava API Authorization successful!</h1><p>You can now close or minimise this browser window and return to the application.</p></body></html>")
 
             threading.Thread(target=self.server.shutdown).start()
         else:
